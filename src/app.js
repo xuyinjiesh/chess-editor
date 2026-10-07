@@ -221,10 +221,18 @@
   function selectPiece(id) {
     ui.selectedPieceId = (ui.selectedPieceId === id) ? null : id;
     const p = ui.selectedPieceId ? pieceOf(id) : null;
-    if (p) ui.selectedTypeId = p.t;
+    if (p) {
+      const t = typeOf(p.t);
+      ui.selectedTypeId = p.t;
+      if (ui.mode === 'edit' && t) {      // 编辑模式下画笔跟随选中，界面才不会自相矛盾
+        ui.brush = { kind: 'piece', typeId: p.t };
+        ui.brushArmy = t.army;
+      }
+    }
     draw();
     CE.panels.renderStatus();
     CE.panels.renderPieceForm();
+    CE.panels.renderPalette();
   }
   function clearSelection() {
     ui.selectedPieceId = null;
