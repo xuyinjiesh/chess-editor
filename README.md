@@ -145,6 +145,7 @@ src/room.js         房间面板：成员、阵营认领、模式切换、邀请
 tests/engine.test.mjs  规则引擎测试（纯 Node，无需任何依赖）
 tests/room.test.mjs    房间协议测试（内存总线，3 个模拟客户端）
 tests/dom.test.mjs     界面集成测试（jsdom，可选）
+tests/live.test.mjs    线上产物验证：抓取 Pages 上的真实文件跑一遍集成测试
 tests/roomui.test.mjs  两个浏览器端到端联机测试（jsdom，可选）
 tests/netmqtt.test.mjs 真实公共代理链路测试（需要外网）
 ```
@@ -162,7 +163,8 @@ node tests/room.test.mjs        # 28 项：加入/同步/对战校验/在线状�
 
 ```bash
 npm i -D jsdom
-node tests/dom.test.mjs         # 69 项：拖拽落子、画笔、规则约束、撤销重做、模板、导出
+node tests/dom.test.mjs         # 71 项：拖拽落子、画笔、规则约束、撤销重做、模板、导出
+node tests/live.test.mjs        # 28 项：直接验证 GitHub Pages 上的线上产物能不能用
 ```
 
 ## 部署到 GitHub Pages
@@ -182,6 +184,12 @@ gh repo edit xuyinjiesh/chess-editor --visibility public --accept-visibility-cha
 echo '{"source":{"branch":"main","path":"/"},"build_type":"legacy"}' \
   | gh api -X POST repos/xuyinjiesh/chess-editor/pages --input -
 gh api repos/xuyinjiesh/chess-editor/pages --jq '{status,html_url}'
+```
+
+每次推送到 `main` 后，Pages 会自动重新发布（约 20 秒）。发布完可以抓线上产物做一次真实验证：
+
+```bash
+node tests/live.test.mjs        # 抓取线上文件，在 jsdom 里跑核心交互
 ```
 
 ## 已知取舍

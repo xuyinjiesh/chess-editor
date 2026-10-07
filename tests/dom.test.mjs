@@ -364,6 +364,32 @@ function clickOn(sel) {
   ok('编辑校验：关闭后可自由摆放', app.state.pieces.find((x) => x.id === pawn.id).r === 2);
 }
 
+
+// ---------------------------------------------------------------- 落点以松手位置为准（回归测试）
+{
+  await newTpl('empty8');
+  const typeId = app.state.pieceTypes.find((t) => t.name === '车' && t.army === 'a').id;
+  app.placePiece(7, 0, typeId);
+  // 只在「起点与终点中间」发一次 pointermove，然后直接松手在终点：
+  // 快速拖动 / 触屏时就是这样，落点必须按松手位置算。
+  const p0 = M.pieceAt(app.state, 7, 0);
+  const el = document.querySelector(`#pieces .piece[data-id="${p0.id}"]`);
+  const base = { bubbles: true, cancelable: true, pointerId: 9, button: 0, clientX: px(0), clientY: py(7) };
+  el.dispatchEvent(new window.PointerEvent('pointerdown', base));
+  el.dispatchEvent(new window.PointerEvent('pointermove', Object.assign({}, base, { clientX: px(2), clientY: py(5) })));
+  el.dispatchEvent(new window.PointerEvent('pointerup', Object.assign({}, base, { clientX: px(4), clientY: py(3) })));
+  ok('落点：按松手位置计算', !!M.pieceAt(app.state, 3, 4) && !M.pieceAt(app.state, 5, 2),
+    '3,4=' + !!M.pieceAt(app.state, 3, 4) + ' 5,2=' + !!M.pieceAt(app.state, 5, 2));
+
+  // 拖出棋盘后松手 = 取消，回到原位
+  const el2 = document.querySelector(`#pieces .piece[data-id="${p0.id}"]`);
+  const b2 = { bubbles: true, cancelable: true, pointerId: 10, button: 0, clientX: px(4), clientY: py(3) };
+  el2.dispatchEvent(new window.PointerEvent('pointerdown', b2));
+  el2.dispatchEvent(new window.PointerEvent('pointermove', Object.assign({}, b2, { clientX: px(6), clientY: py(2) })));
+  el2.dispatchEvent(new window.PointerEvent('pointerup', Object.assign({}, b2, { clientX: -80, clientY: -80 })));
+  ok('落点：拖出棋盘视为取消', !!M.pieceAt(app.state, 3, 4), '3,4=' + !!M.pieceAt(app.state, 3, 4));
+}
+
 console.log(`\nDOM 测试通过 ${pass} 项，失败 ${fails.length} 项`);
 if (fails.length) {
   fails.forEach((f) => console.log('  ✗ ' + f));

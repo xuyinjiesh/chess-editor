@@ -319,7 +319,12 @@
       }
       const piece = state.pieces.find((p) => p.id === d.id);
       if (!piece) { draw(state, ui); return; }
-      const target = d.next;
+      // 以「松手位置」为准：快速拖动或触屏时未必有落在终点上的 pointermove；
+      // 松手在棋盘外 = 取消本次拖动（回到原位）。
+      let target = null;
+      if (e && e.type === 'pointerup' && typeof e.clientX === 'number') {
+        target = cellFromPoint(e.clientX, e.clientY);
+      }
       if (target && (target.r !== d.from.r || target.c !== d.from.c)) {
         const accepted = hooks.onPieceDrop(d.id, target.r, target.c);
         if (!accepted) {
