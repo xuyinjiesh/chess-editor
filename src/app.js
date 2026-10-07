@@ -14,6 +14,7 @@
   let redoStack = [];
   let clean = null;        // 最近一次提交后的快照
   let lastKey = null, lastTime = 0;
+  let suspended = false;   // true = 正在应用远端状态，不要回传
 
   const ui = {
     mode: 'edit',
@@ -61,6 +62,7 @@
     state.meta.updated = Date.now();
     const changed = captureUndo(opts.coalesce);
     if (changed) scheduleSave();
+    if (changed && !suspended) CE.room.onLocalCommit(opts.op || null, !!opts.coalesce);
     if (opts.silent) return changed;
     draw();                                     // 棋盘永远跟随状态重绘
     if (opts.panels) renderPanels();
@@ -72,7 +74,10 @@
   /** 状态已在别处被直接修改（表单实时编辑）时调用。 */
   function touch(opts) {
     const changed = captureUndo(opts && opts.coalesce);
-    if (changed) scheduleSave();
+    if (changed) {
+      scheduleSave();
+      if (!suspended) CE.room.onLocalCommit(null, true);   // 表单实时编辑：合并发送
+    }
     updateToolbar();
     return changed;
   }
@@ -110,6 +115,7 @@
     if (!state.play.result && ui.mode === 'play' && !state.play.order.length) R.startPlay(state);
     refreshAll();
     scheduleSave();
+    if (!suspended) CE.room.onLocalCommit(null);
   }
 
   // ---------------------------------------------------------------- 渲染调度
@@ -171,7 +177,11 @@
   function updateToolbar() {
     $('btn-undo').disabled = !undoStack.length;
     $('btn-redo').disabled = !redoStack.length;
-    $('mode-seg').querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('is-on', b.dataset.mode === ui.mode));
+    const locked = CE.room.lockedForMe();
+    $('mode-seg').querySelectorAll('[data-mode]').forEach((b) => {
+      b.classList.toggle('is-on', b.dataset.mode === ui.mode);
+      b.disabled = locked && b.dataset.mode !== ui.mode;
+    });
     document.body.dataset.mode = ui.mode;
     const nameInput = $('game-name');
     if (nameInput && document.activeElement !== nameInput) nameInput.value = state.meta.name || '';
@@ -341,6 +351,7 @@
     ui.selectedTypeId = first ? first.id : null;
     refreshAll();
     scheduleSave();
+    CE.room.onLocalCommit(null);
     toast('已载入：' + tpl.name);
   }
 
@@ -464,6 +475,11 @@
 
   function toggleMode(mode) {
     if (mode === ui.mode) return;
+    if (CE.room.isActive() && CE.room.mode() === 'match') {
+      if (CE.room.isHost()) { CE.room.setMode('coedit'); return; }   // 房主离开对战 = 回到协作编辑
+      toast('对战进行中，玩法由房主控制', 'warn');
+      return;
+    }
     if (mode === 'play') {
       if (!M.activeArmies(state).length) { toast('先在棋盘上放一些棋子吧', 'warn'); return; }
       const issues = validatePosition();
@@ -484,13 +500,27 @@
   }
 
   function restartPlay() {
+    if (CE.room.isActive() && CE.room.mode() === 'match' && !CE.room.isHost()) {
+      toast('只有房主可以重开对局', 'warn');
+      return;
+    }
     commit((st) => { R.startPlay(st); }, { panels: true });
     ui.selectedPieceId = null;
     refreshAll();
     toast('已重新开始');
   }
 
-  function undoPly() { undo(); }
+  function undoPly() {
+    if (CE.room.isActive() && CE.room.mode() === 'match' && !CE.room.isHost()) {
+      const last = state.play.plies[state.play.plies.length - 1];
+      if (!last) { toast('还没有走子'); return; }
+      if (CE.room.myArmyId() !== last.army) { toast('只能悔自己刚走的那一步', 'warn'); return; }
+      CE.room.session.room.requestUndo();
+      toast('已请求房主悔棋');
+      return;
+    }
+    undo();
+  }
 
   function movePiece(pieceId, r, c) {
     const p = pieceOf(pieceId);
@@ -524,7 +554,7 @@
       if (outcome) st.play.result = outcome;
       const next = R.currentArmyId(st);
       st.play.lastCheck = !outcome && next ? R.isInCheck(st, next) : false;
-    }, { panels: true });
+    }, { panels: true, op: { kind: 'move', pieceId, r, c } });
     ui.selectedPieceId = null;
     const res = state.play.result;
     if (res) toast(res.kind === 'draw' ? '和棋：' + res.reason : (M.armyById(state, res.army) || {}).name + ' 获胜！', 'win');
@@ -543,7 +573,13 @@
       }
       if (state.play.result) return { draggable: false, reason: '对局已结束' };
       const t = typeOf(p.t);
-      if (!t || t.army !== R.currentArmyId(state)) return { draggable: false, reason: '未轮到该方' };
+      if (!t) return { draggable: false };
+      if (CE.room.isActive() && CE.room.mode() === 'match') {
+        if (!CE.room.myArmyId()) { toast('你在观战，先在房间面板里选一个阵营', 'warn'); return { draggable: false }; }
+        if (!CE.room.canControl(t.army)) { toast('你操控的是另一方', 'warn'); return { draggable: false }; }
+        if (!CE.room.myTurn()) { toast('还没轮到你', 'warn'); return { draggable: false }; }
+      }
+      if (t.army !== R.currentArmyId(state)) return { draggable: false, reason: '未轮到该方' };
       const moves = R.legalMovesFor(state, p);
       if (!moves.length) { toast('这枚棋子暂时无处可走', 'warn'); return { draggable: false, reason: '无处可走' }; }
       return { draggable: true, check: true, moves };
@@ -566,7 +602,7 @@
       });
       CE.render.highlightOnly(ui.highlight);
     },
-    onDragEnd() { },
+    onDragEnd() { CE.room.flushPending(); },
     onPieceDrop(pieceId, r, c) { return movePiece(pieceId, r, c); },
     onPieceDelete(pieceId) {
       commit((st) => { st.pieces = st.pieces.filter((p) => p.id !== pieceId); });
@@ -605,6 +641,97 @@
       }
     }
   };
+
+  // ---------------------------------------------------------------- 联机
+  /** 收到远端权威状态：整盘替换（拖拽中会由 room 暂存后再调用）。 */
+  function applyRemoteState(next) {
+    if (!next) { refreshAll(); return; }
+    suspended = true;
+    try {
+      const prev = snapshot();
+      state = M.normalize(JSON.parse(JSON.stringify(next)));
+      undoStack.push(prev);
+      if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+      redoStack = [];
+      clean = snapshot();
+      lastKey = null;
+      afterStateSwapQuiet();
+    } finally {
+      suspended = false;
+    }
+  }
+  function afterStateSwapQuiet() {
+    if (ui.selectedTypeId && !typeOf(ui.selectedTypeId)) ui.selectedTypeId = null;
+    if (ui.selectedPieceId && !pieceOf(ui.selectedPieceId)) ui.selectedPieceId = null;
+    if (!M.armyById(state, ui.brushArmy)) ui.brushArmy = state.armies[0] && state.armies[0].id;
+    if (ui.brush.kind === 'piece' && !typeOf(ui.brush.typeId)) {
+      const first = state.pieceTypes.find((t) => t.army === ui.brushArmy) || state.pieceTypes[0];
+      ui.brush = first ? { kind: 'piece', typeId: first.id } : { kind: 'erase' };
+    }
+    refreshAll();
+    scheduleSave();
+  }
+
+  /** 房主：校验并应用来自加入者的指令。返回 true 表示已落地，需要广播。 */
+  function remoteApplyOp(op, member) {
+    if (!op || typeof op !== 'object') return false;
+    if (op.kind === 'move') {
+      const p = pieceOf(op.pieceId);
+      if (!p) return false;
+      const t = typeOf(p.t);
+      if (!t) return false;
+      if (CE.room.mode() === 'match' && member && member.armyId !== t.army) return false;  // 不是他的棋
+      if (t.army !== R.currentArmyId(state)) return false;                                 // 没轮到
+      if (state.play.result) return false;                                                 // 已结束
+      if (!R.legalMovesFor(state, p).some((m) => m.r === op.r && m.c === op.c)) return false;
+      suspended = true;
+      try {
+        commit((st) => {
+          R.applyPly(st, op.pieceId, { r: op.r, c: op.c });
+          R.advanceTurn(st);
+          const outcome = R.evaluate(st);
+          if (outcome) st.play.result = outcome;
+          const next = R.currentArmyId(st);
+          st.play.lastCheck = !outcome && next ? R.isInCheck(st, next) : false;
+        }, { silent: true });
+      } finally {
+        suspended = false;
+      }
+      const res = state.play.result;
+      if (res) toast(res.kind === 'draw' ? '和棋：' + res.reason : (M.armyById(state, res.army) || {}).name + ' 获胜！', 'win');
+      else if (state.play.lastCheck) toast('将军！', 'warn');
+      refreshAll();
+      return true;
+    }
+    if (op.kind === 'undo') {
+      const last = state.play.plies[state.play.plies.length - 1];
+      if (!last) return false;
+      if (member && member.armyId && last.army !== member.armyId) return false;   // 只能悔自己那一步
+      undo();
+      return true;
+    }
+    if (op.kind === 'request-edit') return false;
+    return false;
+  }
+
+  /** 由房间控制切换到某个模式（不额外广播，避免来回触发）。 */
+  function forceMode(m) {
+    if (ui.mode === m) return;
+    const authoritative = !CE.room.isActive() || CE.room.isHost();
+    if (authoritative) {
+      suspended = true;
+      try {
+        commit((st) => {
+          if (m === 'play') { if (!st.play.active || !st.play.order.length) R.startPlay(st); }
+          else { st.play.active = false; }
+        }, { silent: true });
+      } finally { suspended = false; }
+    }
+    ui.mode = m;
+    ui.selectedPieceId = null;
+    CE.panels.setRightTab(m === 'play' ? 'play' : 'board');
+    refreshAll();
+  }
 
   // ---------------------------------------------------------------- 导出
   function download(filename, blob) {
@@ -727,6 +854,7 @@
       ui.selectedTypeId = first ? first.id : null;
       refreshAll();
       scheduleSave();
+      CE.room.onLocalCommit(null);
       toast('已导入棋局');
       return true;
     } catch (e) {
@@ -822,7 +950,10 @@
   }
 
   // ---------------------------------------------------------------- 启动
+  let inited = false;
   function init() {
+    if (inited) return;          // 保证只初始化一次，重复触发不会覆盖当前棋局
+    inited = true;
     state = loadSaved() || P.build('chess');
     if (!state.pieceTypes.length && !state.pieces.length) state = P.build('chess');
     clean = snapshot();
@@ -859,6 +990,7 @@
     });
 
     bindToolbar();
+    CE.room.init();
     CE.panels.setRightTab('board');
     refreshAll();
     updateToolbar();
@@ -879,6 +1011,7 @@
     addType, duplicateType, deleteType, addArmy, deleteArmy,
     addWin, deleteWin, updateWin,
     toggleMode, restartPlay, undoPly, movePiece,
+    applyRemoteState, remoteApplyOp, forceMode,
     exportJSON, exportSVG, exportPNG, copyJSON, importState, buildSVG,
     validatePosition, snapshot
   };

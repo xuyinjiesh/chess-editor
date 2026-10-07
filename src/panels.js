@@ -485,6 +485,12 @@
       const turnId = CE.rules.currentArmyId(s);
       const a = armyOf(turnId) || {};
       parts.push(`<span class="status-chip" style="--army-color:${esc(a.color || '#888')}"><i></i>${esc(a.name || '—')} 行棋</span>`);
+      if (CE.room.isActive() && CE.room.mode() === 'match') {
+        const mine = CE.room.myArmyId();
+        if (!mine) parts.push('<span class="status-chip status-chip--warn">观战中</span>');
+        else if (CE.room.myTurn()) parts.push('<span class="status-chip status-chip--turn">轮到你</span>');
+        else parts.push('<span class="status-hint">等待对方走子…</span>');
+      }
       if (s.play.result) parts.push(`<span class="status-chip status-chip--over">${esc(resultText(s.play.result))}</span>`);
       else if (CE.rules.isInCheck(s, turnId)) parts.push('<span class="status-chip status-chip--warn">被将军</span>');
       else parts.push('<span class="status-hint">拖动棋子走子，绿色圆点是可落点</span>');
@@ -625,6 +631,16 @@
               <li>全歼：某阵营棋子被全部消灭。</li>
               <li>抵达目标：走到「目标格」。</li>
               <li>无子可动判负 / 回合上限判和。</li>
+            </ul>
+          </section>
+          <section>
+            <h4>联机房间</h4>
+            <ul>
+              <li>右上角「房间」→ 创建房间，把邀请链接发给朋友即可。</li>
+              <li><b>同一台电脑</b>：选「多个标签页」，另开标签页打开同一地址再输房间号。</li>
+              <li><b>异地联机</b>：选「公共中继」，走公共 MQTT 服务器，双方只要能上网就行。</li>
+              <li>房主是权威：保存棋局、校验走法、广播结果；房主退出后其他人可接管。</li>
+              <li>协作编辑 = 大家一起改棋盘与规则；对战 = 各认一方，轮流走子。</li>
             </ul>
           </section>
           <section>

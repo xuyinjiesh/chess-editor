@@ -58,7 +58,7 @@ window.getComputedStyle = (el, ps) => {
 window.requestAnimationFrame = (cb) => setTimeout(() => cb(Date.now()), 0);
 
 // --- 加载应用脚本 ---
-for (const f of ['presets.js', 'model.js', 'rules.js', 'render.js', 'panels.js', 'app.js']) {
+for (const f of ['presets.js', 'model.js', 'rules.js', 'render.js', 'panels.js', 'mqtt.js', 'net.js', 'room.js', 'app.js']) {
   window.eval(fs.readFileSync(path.join(root, 'src', f), 'utf8'));
 }
 window.dispatchEvent(new window.Event('DOMContentLoaded'));

@@ -1,12 +1,14 @@
 {
   "name": "chess-studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "棋局工坊 —— 零依赖的棋类游戏编辑器（直接打开 index.html 即可使用）",
+  "description": "棋局工坊 —— 零依赖的棋类游戏编辑器 + 联机房间（直接打开 index.html 即可使用）",
   "scripts": {
     "start": "python3 -m http.server 4173",
-    "test": "node tests/engine.test.mjs",
-    "test:dom": "node tests/dom.test.mjs"
+    "test": "node tests/engine.test.mjs && node tests/room.test.mjs",
+    "test:dom": "node tests/dom.test.mjs && node tests/roomui.test.mjs",
+    "test:net": "node tests/netmqtt.test.mjs",
+    "test:all": "node tests/engine.test.mjs && node tests/room.test.mjs && node tests/dom.test.mjs && node tests/roomui.test.mjs"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"

@@ -545,3 +545,86 @@ kbd {
   .help-grid { grid-template-columns: 1fr; }
   .card { max-height: none; }
 }
+
+
+/* ---------------------------------------------------------------- 房间 / 联机 */
+.btn--room { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.btn--room:hover { background: var(--accent); color: var(--accent-text); }
+
+.room-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent);
+  font-size: 12.5px; font-weight: 600; transition: .15s;
+}
+.room-badge small { color: var(--text-2); font-weight: 400; }
+.room-badge:hover { background: var(--accent); color: var(--accent-text); }
+.room-badge:hover small { color: var(--accent-text); opacity: .85; }
+.room-badge.is-warn { border-color: var(--warn); color: var(--warn); background: transparent; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); flex: 0 0 auto; }
+.dot.is-on { background: #4caf7d; box-shadow: 0 0 0 3px rgba(76, 175, 125, .18); }
+.dot.is-warn { background: var(--warn); box-shadow: 0 0 0 3px rgba(200, 150, 40, .18); }
+
+.room-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.room-body { display: flex; flex-direction: column; gap: 12px; }
+.room-lead { color: var(--text-2); font-size: 13.5px; line-height: 1.75; margin: 0; }
+.room-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.room-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.room-or { color: var(--text-3); font-size: 12px; }
+.room-code-input {
+  flex: 1; min-width: 110px; padding: 8px 11px; text-transform: uppercase;
+  border: 1px solid var(--line-2); border-radius: var(--radius-xs); background: var(--surface-2);
+  font-family: var(--font-mono); letter-spacing: 2px;
+}
+.room-code-input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.room-status {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.room-status__code { display: flex; flex-direction: column; }
+.room-status__code small { color: var(--text-3); font-size: 10.5px; letter-spacing: 1.5px; }
+.room-status__code b { font-family: var(--font-mono); font-size: 22px; letter-spacing: 4px; color: var(--accent); }
+.room-status__info { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); }
+.room-status__acts { margin-left: auto; display: flex; gap: 7px; flex-wrap: wrap; }
+.room-link {
+  margin: 0; padding: 7px 10px; border-radius: var(--radius-xs);
+  background: var(--surface-3); color: var(--text-3); font-family: var(--font-mono);
+  font-size: 11px; overflow-wrap: anywhere;
+}
+.room-modes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.room-modes__label { font-size: 11.5px; color: var(--text-3); letter-spacing: .4px; }
+.member-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.member-list li {
+  display: flex; align-items: center; gap: 8px; padding: 7px 11px;
+  border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-2); font-size: 13px;
+}
+.member-list li.is-me { border-color: var(--accent); background: var(--accent-soft); }
+.member-dot { width: 7px; height: 7px; border-radius: 50%; background: #4caf7d; }
+.member-army { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); font-size: 12px; }
+.member-army i { width: 9px; height: 9px; border-radius: 50%; background: var(--army-color); }
+.tag {
+  font-style: normal; font-size: 10.5px; padding: 1px 7px; border-radius: 99px;
+  background: var(--surface-3); color: var(--text-3); border: 1px solid var(--line);
+}
+.tag--host { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+.status-chip--turn { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.room-locked-hint {
+  margin: 0; text-align: center; font-size: 12px; color: var(--warn);
+  background: rgba(200, 150, 40, .1); border: 1px dashed rgba(200, 150, 40, .5);
+  border-radius: 99px; padding: 5px 14px; width: fit-content;
+}
+
+/* 对战模式下锁定加入者的编辑入口 */
+body.room-locked .panel--left,
+body.room-locked .tabpanes > [data-pane="board"],
+body.room-locked .tabpanes > [data-pane="rules"] {
+  opacity: .45; pointer-events: none; filter: grayscale(.5);
+}
+
+@media (max-width: 720px) {
+  .room-grid { grid-template-columns: 1fr; }
+  .room-status__acts { margin-left: 0; width: 100%; }
+}

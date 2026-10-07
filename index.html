@@ -42,6 +42,8 @@
       </div>
     </details>
     <button id="btn-import" class="btn">导入</button>
+    <button id="room-badge" class="room-badge" hidden></button>
+    <button id="btn-room" class="btn btn--room" title="创建或加入联机房间">房间</button>
     <button id="btn-help" class="icon-btn" title="使用说明">?</button>
     <button id="btn-theme" class="icon-btn" title="切换明暗主题">☀</button>
   </div>
@@ -78,6 +80,7 @@
       </div>
     </div>
     <div class="statusbar" id="statusbar"></div>
+    <p class="room-locked-hint" id="room-locked-hint" hidden>对战进行中 · 棋盘与规则由房主控制</p>
   </section>
 
   <!-- 右侧：棋盘 / 规则 / 对局 -->
@@ -104,6 +107,9 @@
 <script src="src/rules.js"></script>
 <script src="src/render.js"></script>
 <script src="src/panels.js"></script>
+<script src="src/mqtt.js"></script>
+<script src="src/net.js"></script>
+<script src="src/room.js"></script>
 <script src="src/app.js"></script>
 </body>
 </html>
