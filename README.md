@@ -165,6 +165,25 @@ npm i -D jsdom
 node tests/dom.test.mjs         # 69 项：拖拽落子、画笔、规则约束、撤销重做、模板、导出
 ```
 
+## 部署到 GitHub Pages
+
+这是一个**纯静态、零构建**的站点（所有引用都是相对路径），因此可以直接用 GitHub Pages 托管：
+线上地址 <https://xuyinjiesh.github.io/chess-editor/>。
+
+- 发布源：`main` 分支根目录（Deploy from a branch），不需要任何构建步骤，也不需要 GitHub Actions。
+- 根目录的 `.nojekyll` 用来关掉 Jekyll 处理，保证 `src/`、`docs/` 等目录原样发布。
+- 免费账号的 Pages **只支持公开仓库**，所以本仓库需要是 public。
+- 房间功能在 Pages 上体验最好：`BroadcastChannel` 与 `navigator.clipboard` 都需要非 `file://` 的安全上下文，HTTPS 页面下全部可用。
+
+对应的命令行操作（已在本机执行过）：
+
+```bash
+gh repo edit xuyinjiesh/chess-editor --visibility public --accept-visibility-change-consequences
+echo '{"source":{"branch":"main","path":"/"},"build_type":"legacy"}' \
+  | gh api -X POST repos/xuyinjiesh/chess-editor/pages --input -
+gh api repos/xuyinjiesh/chess-editor/pages --jq '{status,html_url}'
+```
+
 ## 已知取舍
 
 - 中国象棋模板的走法（车马炮象士卒）已按真实规则实现，但**九宫限制、过河后横走、将帅照面**尚未内置，可用「限本方半场」与自定义方向近似，或后续扩展区域限制。
