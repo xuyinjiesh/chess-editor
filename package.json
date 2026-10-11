@@ -1,16 +1,31 @@
 {
-  "name": "chess-studio",
-  "version": "1.1.0",
+  "name": "chess-editor-v2",
+  "version": "2.0.0",
   "private": true,
-  "description": "棋局工坊 —— 零依赖的棋类游戏编辑器 + 联机房间（直接打开 index.html 即可使用）",
+  "type": "module",
   "scripts": {
-    "start": "python3 -m http.server 4173",
-    "test": "node tests/engine.test.mjs && node tests/room.test.mjs",
-    "test:dom": "node tests/dom.test.mjs && node tests/roomui.test.mjs",
-    "test:net": "node tests/netmqtt.test.mjs",
-    "test:all": "node tests/engine.test.mjs && node tests/room.test.mjs && node tests/dom.test.mjs && node tests/roomui.test.mjs"
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "server": "node server/relay.mjs"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "lucide-react": "^0.468.0",
+    "peerjs": "^1.5.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
-    "jsdom": "^26.1.0"
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@playwright/test": "^1.49.1",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^3.0.0"
   }
 }
