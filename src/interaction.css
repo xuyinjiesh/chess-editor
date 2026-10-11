@@ -1,0 +1,97 @@
+/* View preferences stay separate from the portable game's board palette. */
+:root{color-scheme:light;--surface:#fffefb;--surface-raised:#f3f6ed;--text-primary:#30372f;--text-secondary:#858f7c;--text-faint:#9ba58d}
+html[data-theme=dark]{color-scheme:dark;background:#151a19;color:#e5ebe5;--surface:#1c2321;--surface-raised:#26302b;--line:#323d36;--muted:#a2b1a4;--soft:#27332a;--text-primary:#e5ebe5;--text-secondary:#b1bfb1;--text-faint:#8f9f92}
+.app{min-height:480px}
+.header-end{gap:12px}.theme-toggle{width:33px;height:33px}
+.brand{font-size:20px;letter-spacing:1px}.brand>span:nth-child(2){gap:8px}.brand small{font-size:7px}.brand .beta{margin-left:-3px}
+.project-bar{height:56px;min-height:56px}.editor-tabs{height:44px;min-height:44px}
+.canvas{padding:16px 24px 34px;overflow:hidden}
+.canvas-heading{margin-bottom:10px}.canvas-heading h1{font-size:21px;margin:3px 0 5px}.canvas-heading p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(420px,50vw)}
+.board-viewport{display:flex;flex:1;min-height:120px;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:4px;position:relative}
+.canvas .board-stage{width:calc(var(--fit-board,480px) * var(--board-zoom,1));max-width:none;flex:0 0 auto;margin:auto}
+.player-strip{height:46px;padding-bottom:9px}.player-strip.bottom{height:46px;padding-top:5px}
+.canvas-bottom{margin-top:10px;gap:8px}.canvas-hint{line-height:16px;text-align:center}.canvas-corner{bottom:10px}
+.floating-toolbar{padding:5px 8px}.floating-toolbar button{width:32px;height:30px}
+.canvas-corner .zoom-reset{width:38px;display:inline-block;font-size:10px;font-variant-numeric:tabular-nums;padding:2px;border-radius:4px}
+.canvas-corner .zoom-reset:hover{background:var(--surface-raised);color:var(--accent)}
+.is-playing .sidebar:not(.mobile-open),.is-playing .editor-tabs,.is-playing .canvas-heading{display:none}
+.is-playing .canvas{padding-top:12px}
+.focus-mode{position:fixed;inset:0;height:100dvh;min-height:0;z-index:30}
+.focus-mode .app-header,.focus-mode .sidebar,.focus-mode .right-panel,.focus-mode .editor-tabs,.focus-mode .app-footer,.focus-mode .canvas-heading{display:none}
+.focus-mode .workspace{flex:1;min-height:0}.focus-mode .main{min-height:0}
+.focus-mode .project-bar{height:50px;min-height:50px;padding:0 24px}
+.focus-mode .project-actions>.button:not(.primary):not(.focus-action),.focus-mode .action-divider{display:none}
+.focus-mode .canvas{height:auto;min-height:0;padding:8px 24px 30px;flex:1}
+.focus-mode .canvas-hint{display:none}.focus-mode .canvas-bottom{margin-top:5px}
+.focus-mode .floating-toolbar{box-shadow:0 3px 20px #00000012}
+.focus-mode .project-actions .focus-action{display:inline-flex;border:1px solid var(--accent);color:var(--accent);background:var(--surface)}
+.focus-mode .project-actions .focus-action span{display:inline}
+.shortcut-heading{margin:24px 0 9px;font-size:13px;font-weight:550}.shortcut-note{font-size:10px;color:var(--text-secondary);line-height:1.9}
+.shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:14px}
+.shortcuts>span{justify-content:space-between;color:var(--text-secondary);font-size:10px}.shortcuts kbd{white-space:nowrap}
+
+/* Only the position wrapper translates. Icons keep their own shadows and lift. */
+.piece-layer{position:absolute;inset:0;pointer-events:none;z-index:5}
+.pattern-hex .piece-layer{inset:4px;--piece-gap:2px}
+.pattern-hex .piece-sprite{width:calc((100% - (var(--cols) - 1) * 2px) / var(--cols));height:calc((100% - (var(--rows) - 1) * 2px) / var(--rows))}
+.piece-sprite{position:absolute;left:0;top:0;width:calc(100% / var(--cols));height:calc(100% / var(--rows));pointer-events:none;transition:transform 240ms cubic-bezier(.22,.72,.24,1);z-index:1}
+.piece-body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;transition:transform 150ms ease,filter 150ms ease;transform-origin:center;perspective:500px}
+.piece-sprite.is-selected{z-index:3}.piece-sprite.is-selected .piece-body{transform:translateY(-5%) scale(1.07);filter:drop-shadow(0 5px 3px #10201c45)}
+.piece-body.is-arriving{animation:piece-arrive 260ms cubic-bezier(.2,1.4,.5,1)}
+.piece-sprite.is-exiting{z-index:0}.piece-sprite.is-exiting .piece-body{animation:piece-capture 200ms ease-out both}
+.piece-sprite.is-dragging{transition:none;z-index:10}.piece-sprite.is-dragging .piece-body{transform:scale(1.14) translateY(-6%);filter:drop-shadow(0 7px 4px #142c2455)}
+.board.tool-select .cell:not([aria-label$="空格"]),.board.tool-play .cell:not([aria-label$="空格"]){touch-action:none}.board.tool-select .cell[aria-label]:not([aria-label$="空格"]){cursor:grab}
+.board.is-dragging,.board.is-dragging .cell{cursor:grabbing}
+.cell.drag-target:after{content:'';position:absolute;inset:2px;border:2px solid #2d6a55;box-shadow:inset 0 0 0 2px #ffffff40;background:#3b926e28;pointer-events:none;z-index:4}
+.cell.invalid-target:after{content:'';position:absolute;inset:0;border:3px solid #b85c49;background:#b85c4929;z-index:4;animation:invalid-pulse 400ms ease-out;pointer-events:none}
+.cell.last-move:before{animation:move-highlight 400ms ease-out}
+@keyframes piece-arrive{from{opacity:0;transform:scale(.55) translateY(-12%)}70%{transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
+@keyframes piece-capture{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.6) rotate(8deg)}}
+@keyframes invalid-pulse{from{opacity:1}to{opacity:.3}}
+@keyframes move-highlight{from{background:#edf19cbb}to{background:#dae28c66}}
+
+html[data-theme=dark] .app{background:#151a19;color:var(--text-primary)}
+html[data-theme=dark] :is(.app-header,.main,.right-panel,.modal,.app-footer){background:var(--surface);border-color:var(--line)}
+html[data-theme=dark] .sidebar{background:#19201d}
+html[data-theme=dark] .canvas{background-color:#151c18;background-image:radial-gradient(#354238 .75px,transparent .75px)}
+html[data-theme=dark] :is(input,select,textarea){background:#141b17;color:var(--text-primary);border-color:#3a483d}
+html[data-theme=dark] :is(input,textarea)::placeholder{color:#7e9282}
+html[data-theme=dark] :is(.button,.new-project,.floating-toolbar,.layout-option,.region-list button,.template-gallery>button,.ai-composer){background:var(--surface);color:var(--text-primary);border-color:#3a483d}
+html[data-theme=dark] .button.primary,html[data-theme=dark] .send-button{background:var(--accent);border-color:var(--accent);color:#14231a}
+html[data-theme=dark] :is(.button:hover,.icon-button:hover,.template-item:hover,.saved-project:hover,.floating-toolbar button:hover,.ai-suggestion:hover){background:#2c3a2e;border-color:#53634e}
+html[data-theme=dark] :is(.template-item.active,.layout-option.active,.piece-palette button.active,.region-list button.active,.floating-toolbar button.active){background:#2a3b2b;border-color:#576d47;color:var(--accent)}
+html[data-theme=dark] :is(.workspace-avatar,.profile,.project-badge,.canvas-heading h1>span,.canvas-settings,.new-badge,.works>span,.subtle-badge,.segmented,.piece-palette button,.rule-summary,.code-snippet,.modal-body .info-note,.proposal,.game-status,.room-code,.code-file,.help-step>span,.shortcuts kbd,.promotion-options>button,.template-gallery>button>div,.ai-suggestion,.tags>span,.result-banner){background:var(--surface-raised);border-color:#3c4b3b;color:var(--text-secondary)}
+html[data-theme=dark] :is(.idea-card,.assistant-card,.ai-orb){background:linear-gradient(130deg,#27352b,#303927);border-color:#3a4831}
+html[data-theme=dark] :is(.idea-symbol,.assistant-card-art){color:#405138}
+html[data-theme=dark] .segmented button.active{background:#3a4b39;color:var(--accent)}
+html[data-theme=dark] :is(.button.danger,.error-box,.check-banner){background:#35251e;border-color:#684237;color:#edb19b}
+html[data-theme=dark] .success-box{background:#253324;border-color:#445e3c;color:#bfd6a8}
+html[data-theme=dark] :is(.player-avatar.black,.player-avatar.spectator){background:#2c382d;color:#b3c8a5;border-color:#42543c}
+html[data-theme=dark] .player-avatar.white{background:#dedfca;color:#5d6349;border-color:#e7e8d6}
+html[data-theme=dark] .red-side .player-avatar.white{background:#ead6b8;color:#9d3c2e;border-color:#cba979}
+html[data-theme=dark] .turn-badge{background:#273b24;border-color:#4c633b;color:#c1d4aa}
+html[data-theme=dark] .switch{background:#485348}
+html[data-theme=dark] :is(.workspace-label small,.sidebar-heading,.template-item small,.new-project>span,.all-templates,.no-projects,.no-projects button,.saved-project,.idea-card p,.idea-card button,.sidebar-footer,.save-status,.brand small,.beta,.top-nav button,.project-badge,.project-icon,.editor-tabs>div>button,.room-shortcut,.eyebrow,.canvas-heading p,.canvas-heading h1>span,.icon-button,.player-strip small,.player-caption,.rank-labels,.file-labels,.canvas-hint,.canvas-corner,.canvas-corner button,.floating-toolbar button,.panel-tabs>button,.section-caption>span,.field-label,.field-label>small,.size-fields label,.color-fields label,.color-fields label>span,.toggle-row,.toggle-row small,.info-note,.info-note svg,.assistant-card p,.assistant-card>button,.panel-bottom,.app-footer,.app-footer button,.text-button,.region-list small,.empty-panel,.empty-panel small,.rule-summary p,.code-snippet,.code-snippet>span,.modal-heading p,.ai-welcome p,.suggestion-label,.ai-privacy,.proposal p,.proposal details,.game-status>span:last-child,.game-metrics span,.move-list>div,.move-list>div>span:first-child,.room-code>span,.room-transport,.players-list>div>span:last-child,.advanced-settings,.code-help,.code-help code,.code-file>span:nth-child(2),.sandbox-badge,.template-gallery p,.template-gallery>button>span,.help-step p,.shortcuts>span,.shortcuts kbd){color:var(--text-secondary)}
+html[data-theme=dark] :is(.top-nav button.active,.editor-tabs>div>button.active,.panel-tabs>button.active,.room-shortcut.connected,.game-metrics strong,.room-code strong,.help-step h4,.template-gallery h3,.ai-welcome h3){color:var(--accent)}
+html[data-theme=dark] :is(.move-list,.waiting-player,.ai-composer>div,.code-file,.layout-option,.beta,.palette-options>button){border-color:var(--line)}
+html[data-theme=dark] .move-list>div:nth-child(odd){background:#232d25}
+html[data-theme=dark] .or-divider>span{background:var(--surface);color:var(--text-secondary)}
+html[data-theme=dark] .code-editor{background:#141d17;color:#c3d6b4;border-color:#42523c}
+html[data-theme=dark] .modal-backdrop{background:#020a07a3}
+html[data-theme=dark] .board:not(.pattern-xiangqi){border-color:#2c392e;box-shadow:0 0 0 1px #58634f,0 9px 28px #00000044}
+html[data-theme=dark] .mini .board{border:0;box-shadow:none}
+
+@media(min-width:1600px){.canvas{padding-left:30px;padding-right:30px}.right-panel{width:300px}.sidebar{width:225px}.brand{width:225px}}
+@media(max-width:1190px){.header-end{gap:8px}.brand{width:205px}.top-nav{gap:20px}.project-bar{padding:0 16px}.project-actions{gap:5px}}
+@media(max-width:720px){
+  .app{min-height:100dvh}.app-header{padding:0 12px}.brand{font-size:17px;gap:7px;width:auto}.brand-icon{width:29px;height:31px}.top-nav{gap:12px}.top-nav button:first-child{display:none}.top-nav button{font-size:10px;gap:4px}.header-end{margin-left:8px}.header-end>.theme-toggle{display:flex}.header-end>.profile{display:none}
+  .main{min-height:0}.canvas{height:max(560px,calc(100dvh - 165px));min-height:0;flex:auto;padding:16px 12px 32px;overflow:hidden}.canvas-heading h1{font-size:21px}.canvas-heading p{max-width:80vw}.canvas-heading{margin-bottom:10px}
+  .board-viewport{min-height:0}.canvas .board-stage{max-width:none}.canvas-bottom{margin-top:10px}.canvas-hint{font-size:9px;max-width:100%}.canvas-corner{left:16px;right:16px}
+  .project-bar{height:54px;min-height:54px;padding:0 12px}.project-breadcrumb strong{max-width:100px}.project-actions .focus-action{padding:6px}.project-actions .button.focus-action span{display:inline;font-size:9px}.project-actions .action-divider{display:none}
+  .is-playing .canvas{height:calc(100dvh - 115px);min-height:400px}.is-playing .project-actions>.button:not(.primary):not(.focus-action){display:none}
+  .focus-mode{height:100dvh;min-height:0;overflow:hidden}.focus-mode .canvas{height:auto;min-height:0;padding:5px 10px 28px;flex:1}.focus-mode .workspace{overflow:hidden;min-height:0}.focus-mode .project-bar{padding:0 12px}
+  .shortcuts{gap:12px 9px}.shortcuts>span{font-size:9px}.shortcuts kbd{font-size:8px}
+}
+@media(max-width:420px){.top-nav{gap:8px}.top-nav button{font-size:0;gap:0;min-width:28px;justify-content:center}.top-nav button svg{width:17px;height:17px}.brand{font-size:18px}.header-end{margin-left:8px}}
+@media(max-height:600px) and (min-width:721px){.canvas-heading{display:none}.canvas-hint{display:none}.app-header{height:52px;min-height:52px}.canvas{padding-top:8px}.canvas-bottom{margin-top:5px}.sidebar{padding-top:12px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.piece-sprite.is-exiting{display:none}}

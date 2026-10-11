@@ -1,0 +1,51 @@
+/* Adapted directly from the user's WSL chess-editor/styles.css (board/pieces).
+   The React renderer retains its grid geometry, rules and stable piece IDs. */
+:root{--piece-serif:"Iowan Old Style","Palatino Linotype",Georgia,"Songti SC","Noto Serif CJK SC","Segoe UI Symbol",serif}
+.board-frame{background:none;box-shadow:none;border-radius:0}
+.board-surface{padding:14px;border-radius:18px;background:linear-gradient(158deg,var(--frame-a),var(--frame-b));box-shadow:0 26px 50px -26px #18120899,inset 0 1px 0 #ffffff59}
+.board-surface .board{border:0;border-radius:4px;box-shadow:inset 0 0 0 1px var(--board-line),0 2px 10px #0000001f;overflow:hidden}
+.board-surface .pattern-hex{overflow:visible}
+.board-surface .board-lines{color:var(--board-line)}
+.board-surface .board-lines line,.board-surface .board-lines path{opacity:1;stroke-width:1}
+.board-surface .board-lines .starting-mark{opacity:.75;stroke-width:.8}
+.board-surface .river-labels{fill:var(--board-text);font-family:var(--piece-serif);font-size:40px;letter-spacing:9px;opacity:.7}
+.board-frame .rank-labels{top:14px;bottom:36px;color:var(--text-secondary);font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.85}
+.board-frame .file-labels{left:38px;right:14px;color:var(--text-secondary);font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.85}
+.piece-body,.cell{container-type:inline-size}
+.chess-glyph{width:84%;height:84%;display:flex;align-items:center;justify-content:center;font-family:var(--piece-serif);font-size:70cqi;line-height:1;font-weight:400;pointer-events:none;color:#f2ede2;filter:none;text-shadow:1px 0 0 #00000080,-1px 0 0 #00000080,0 1px 0 #00000080,0 -1px 0 #00000080,0 2px 3px #0000004d}
+.chess-glyph.black{color:#2b2c31;text-shadow:none;filter:drop-shadow(0 1.5px 1px #00000038)}
+.chess-glyph.white{filter:none}
+.board-surface[data-dark-board=true] .chess-glyph.black{color:#92a0b9;filter:drop-shadow(0 1.5px 1px #00000088)}
+.board-surface[data-dark-board=true] .chess-glyph.white{text-shadow:1px 0 0 #000000,-1px 0 0 #000000,0 1px 0 #000000,0 -1px 0 #000000,0 2px 3px #00000080}
+.xiangqi-piece,.token{width:84%;height:84%;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle at 34% 26%,#fffdf8,#f2e9d8 64%,#ddcfb4);border:2px solid currentColor;color:#23262b;font-family:var(--piece-serif);font-size:46cqi;font-weight:700;line-height:1;text-shadow:none;box-shadow:0 2px 4px #00000038,inset 0 -2px 4px #00000014;filter:none;pointer-events:none}
+.xiangqi-piece.white{color:#b23a2e}.token.white{color:#2f6b63}.token.black{background:radial-gradient(circle at 34% 26%,#fffdf8,#f2e9d8 64%,#ddcfb4);border-color:currentColor;color:#23262b}
+.stone{width:84%;height:84%;border:0;background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#23262b;box-shadow:0 2px 5px #00000057,inset 0 -3px 6px #00000038}
+.stone.black{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#23262b;border:0}
+.stone.white{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#f2ede2;border:0;box-shadow:inset 0 0 0 1px #0000002e,0 2px 5px #0000004d}
+.board-surface[data-dark-board=true] .stone.black{box-shadow:0 0 0 1px #7b879a,0 2px 5px #00000057,inset 0 -3px 6px #00000038}
+.piece-sprite.is-selected .piece-body{filter:drop-shadow(0 4px 3px #00000033)}
+.piece-sprite.is-dragging .piece-body{filter:drop-shadow(0 10px 12px #00000059)}
+.board-surface .cell.last-move:before{background:#d69e2e4d;animation:reference-last-move 400ms ease-out}
+.board-surface .cell.selected{box-shadow:inset 0 0 0 3px var(--accent)}
+.board-surface .cell.selected:before{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.board-surface .move-hint{background:var(--accent);opacity:.5;width:26%;height:26%;box-shadow:0 0 0 1px #ffffff59;animation:reference-mark 160ms ease-out}
+.board-surface .move-hint.capture{width:86%;height:86%;background:none;border:3px solid var(--accent);opacity:.8;box-shadow:none}
+@keyframes reference-last-move{from{background:#d69e2e80}to{background:#d69e2e4d}}
+@keyframes reference-mark{from{opacity:0;scale:.65}to{opacity:.5;scale:1}}
+.mini .board-surface{padding:3px;border-radius:5px;box-shadow:inset 0 1px 0 #ffffff59}
+.mini .board-surface .board{border:0;border-radius:2px;box-shadow:none}
+.mini .xiangqi-piece,.mini .token{border-width:.7px;box-shadow:none}
+.mini .chess-glyph{filter:none;text-shadow:.3px 0 #00000088,-.3px 0 #00000088,0 .3px #00000088,0 -.3px #00000088}
+.mini .chess-glyph.black{text-shadow:none}
+.mini .stone{box-shadow:0 .5px 1px #00000055}
+.brand-icon{container-type:inline-size;display:flex;align-items:center;justify-content:center}.brand-icon .chess-glyph{font-size:30px;filter:none}
+.piece-palette .chess-glyph{font-size:40px}.piece-palette .xiangqi-piece{font-size:25px;flex-shrink:0;height:40px}.piece-palette .token{font-size:20px}
+.promotion-options .chess-glyph{font-size:49px}
+.board-theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.board-theme-options>button{display:flex;align-items:center;gap:7px;position:relative;min-width:0;min-height:38px;padding:6px 7px;background:var(--surface);border:1px solid var(--line);border-radius:7px;font-size:9px;color:var(--text-secondary)}
+.board-theme-options>button:hover{border-color:var(--accent)}.board-theme-options>button.active{border-color:var(--accent);color:var(--accent);background:var(--surface-raised)}
+.board-theme-options>button>svg{margin-left:auto;width:10px}.theme-swatch{display:block;flex-shrink:0;width:24px;height:24px;border:3px solid;border-radius:4px;background-size:11px 11px!important}
+html[data-theme=dark] .app .board-surface .board{border:0;box-shadow:inset 0 0 0 1px var(--board-line),0 2px 10px #0000001f}
+html[data-theme=dark] .app .board-frame :is(.rank-labels,.file-labels){color:#a8b6a8}
+@media(max-width:720px){.board-theme-options{grid-template-columns:repeat(3,minmax(0,1fr))}.board-theme-options>button{font-size:9px}.brand{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.board-surface .move-hint,.board-surface .cell.last-move:before{animation:none}}
