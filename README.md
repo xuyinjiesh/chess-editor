@@ -19,6 +19,21 @@ npm run preview # 预览 dist
 
 `dist/` 可直接部署到任意静态站点服务。国际象棋、中国象棋、五子棋、黑白棋、井字棋、本地编辑与导入导出均不需要应用后端。Google Fonts 无法加载时自动使用系统字体。
 
+## GitHub Pages 部署
+
+v2 使用 React / TypeScript / Vite，必须先构建，再部署 `dist/`。直接把仓库根目录作为 Pages 网站会加载开发入口 `/src/main.tsx`，导致空白页。
+
+仓库已包含 `.github/workflows/pages.yml`，推送到 `main` 后会自动安装依赖、测试、构建并发布 `dist/`。构建时按仓库名称设置 `--base=/chess-editor/`；默认 `npm run build` 仍使用根路径，兼容其他静态托管。
+
+首次设置：
+
+1. 在 GitHub 仓库进入 **Settings → Pages → Build and deployment**。
+2. 将 **Source** 设为 **GitHub Actions**。
+3. 提交并推送工作流到 `main`；若已推送，可在 **Actions → Deploy to GitHub Pages → Run workflow** 中选择 `main` 手动运行。
+4. 等待工作流成功，然后访问 `https://xuyinjiesh.github.io/chess-editor/`。
+
+本地检查 Pages 构建：`npm run build -- --base=/chess-editor/`。不要直接发布项目根目录，也不需要把 `dist` 提交进 Git。
+
 ## 已实现
 
 - 棋盘：3–24 行列、方格 / 交叉网格 / 格内网格 / 中国象棋 / 六边形图块、预设和自定义配色、坐标、翻转、缩放。
