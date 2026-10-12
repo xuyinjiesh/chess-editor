@@ -12,6 +12,10 @@ export const BOARD_THEMES = [
   {id:'goban',name:'木色棋墩',light:'#e8c88a',dark:'#e8c88a',frameA:'#c79850',frameB:'#b8873f',line:'rgba(60,38,10,.75)',text:'#4a3210'},
 ] as const;
 export type BoardTheme = typeof BOARD_THEMES[number]['id'] | 'custom';
+export function pieceLetterLayout(symbol:string){
+  const chars=Array.from(symbol).slice(0,8),count=chars.length;
+  return {chars,columns:count<=2?Math.max(count,1):count<=4?2:3,size:count<=1?58:count===2?34:count<=4?27:count<=6?21:18};
+}
 export function boardAppearance(board:Project['board']){
   const preset=BOARD_THEMES.find(t=>t.id===board.theme)||BOARD_THEMES.find(t=>board.light===t.light&&board.dark===t.dark);
   if(preset)return preset;

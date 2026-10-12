@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, RotateCcw, Undo2, Redo2 } from 'lucide-react';
 import { CustomRulePanel, useCustomPlay } from './custom-play';
 import { Board, PieceIcon } from './Board';
+import { BoardLegend } from './BoardTerrain';
 import { BotSetup, BotStatus, botControlsSide, type BotOptions } from './BotControls';
 import { Modal } from './components';
 import { applyMove, hints, initialState } from './engine';
@@ -81,6 +82,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     <div className="gallery-player-layout">
       <div className="gallery-play-board"><div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
         <Board project={project} pieces={state.pieces} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={setSelected} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
+        <BoardLegend project={project}/>
         <div className="gallery-play-toolbar"><button className="button" onClick={() => history()} disabled={!past.current.length}><Undo2 size={16}/>悔棋</button><button className="button" onClick={() => history(true)} disabled={!future.current.length}><Redo2 size={16}/>重做</button><button className="button" onClick={() => reset()}><RotateCcw size={16}/>重新开始</button></div>
       </div>
       <aside className="gallery-play-info"><CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit}/><h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>

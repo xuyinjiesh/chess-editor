@@ -1,11 +1,20 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { boardAppearance } from './appearance';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { boardAppearance, pieceLetterLayout } from './appearance';
+import { BoardTerrain } from './BoardTerrain';
 import { coord, sameCell, sideLabel, pieceSymbol, type Cell, type Piece, type PieceType, type Project } from './model';
 const CHESS_GLYPHS:Record<string,[string,string]>={k:['♔','♚'],q:['♕','♛'],r:['♖','♜'],b:['♗','♝'],n:['♘','♞'],p:['♙','♟']};
+function RiverStone(){
+  const id=useId().replace(/:/g,'');
+  const outline='M20 18Q41 10 66 14L83 30Q89 46 83 67L70 83Q49 89 30 82L14 64Q9 43 20 18Z';
+  return <span className="token neutral river-stone" aria-hidden="true"><svg viewBox="0 0 100 100"><defs><linearGradient id={`${id}-stone`} x1="20%" y1="0" x2="80%" y2="100%"><stop stopColor="var(--stone-light)"/><stop offset="1" stopColor="var(--stone-mid)"/></linearGradient></defs><path d={outline} transform="translate(0 3)" fill="var(--stone-edge)"/><path d={outline} fill={`url(#${id}-stone)`} stroke="var(--stone-edge)" strokeWidth="1"/><path d="M24 23Q40 15 59 19M17 44L21 32M34 78L46 81" fill="none" stroke="var(--stone-light)" strokeWidth="2"/><path className="stone-texture" d="M23 32L39 28L51 33M58 69L73 61M23 61L32 69M64 28L72 36M37 74L45 71" fill="none" stroke="var(--stone-edge)" strokeWidth=".8"/><path d="M50 38L61 50L50 62L39 50Z" fill="none" stroke="var(--stone-symbol)" strokeWidth="3" strokeLinejoin="round"/></svg></span>;
+}
 export function PieceIcon({type,side='white',symbol,shape='chess'}:{type:string;side?:string;symbol?:string;shape?:PieceType['shape']}){
   if(shape==='stone')return <span className={`stone ${side}`} aria-hidden="true"/>;
-  if(shape==='xiangqi')return <span className={`xiangqi-piece ${side}`} aria-hidden="true">{symbol||'棋'}</span>;
-  if(shape==='token')return <span className={`token ${side}`} aria-hidden="true">{symbol||'✦'}</span>;
+  if(shape==='token'&&side==='neutral'&&type==='river-stone')return <RiverStone/>;
+  if(shape==='xiangqi'||shape==='token'){
+    const {chars,columns,size}=pieceLetterLayout(symbol||(shape==='xiangqi'?'棋':'✦'));
+    return <span className={`${shape==='xiangqi'?'xiangqi-piece':'token'} letter-piece ${side}`} style={{'--glyph-cols':columns,'--glyph-size':`${size}cqi`} as CSSProperties} aria-hidden="true"><span className="piece-grain"/><span className="piece-glyph">{chars.map((c,i)=><span className="piece-letter" key={i}>{c}</span>)}</span></span>;
+  }
   const glyphs=CHESS_GLYPHS[type];
   // Older exports contain only the white symbol; still show the black glyph.
   const glyph=glyphs&&(!symbol||glyphs.includes(symbol))?glyphs[side==='black'?1:0]:symbol||'♟';
@@ -86,17 +95,19 @@ export function Board({project,pieces,selected,hints=[],lastMove,flipped=false,m
     lastDrag.current=performance.now();
     const {target}=point(event);if(!cancel&&target&&!sameCell(g.piece,target))onDrop?.({row:g.piece.row,col:g.piece.col},target);
   }
-  return <div className={`board-frame ${mini?'mini':''} ${coordinates&&!mini?'with-coordinates':''}`} style={{'--board-text':appearance.text,'--piece-white':project.ui.sideColors?.white,'--piece-black':project.ui.sideColors?.black} as CSSProperties} aria-hidden={mini||undefined}>
+  return <div className={`board-frame ${mini?'mini':''} ${coordinates&&!mini?'with-coordinates':''}`} style={{'--light':light,'--dark':dark,'--board-text':appearance.text,'--piece-white':project.ui.sideColors?.white,'--piece-black':project.ui.sideColors?.black} as CSSProperties} aria-hidden={mini||undefined}>
     {coordinates&&!mini&&<div className="rank-labels">{rowList.map(r=><span key={r}>{rows-r}</span>)}</div>}
     <div className="board-surface" data-board-theme={appearance.id} data-dark-board={appearance.id==='midnight'||appearance.id==='nebula'||(appearance.id==='custom'&&appearance.text==='#b9c4d2')} style={{'--frame-a':appearance.frameA,'--frame-b':appearance.frameB,'--board-line':appearance.line,'--board-text':appearance.text} as CSSProperties}><div ref={board} className={`board pattern-${pattern} tool-${tool} ${drag?'is-dragging':''}`} role={mini?undefined:'grid'} aria-label={mini?undefined:`${project.name}棋盘`} style={{'--rows':rows,'--cols':cols,'--light':light,'--dark':dark,aspectRatio:`${cols} / ${rows}`} as CSSProperties} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={e=>pointerEnd(e)} onPointerCancel={e=>pointerEnd(e,true)} onLostPointerCapture={()=>{gesture.current=undefined;setDrag(undefined);}}>
+      <BoardTerrain project={project} flipped={flipped}/>
       <BoardLines rows={rows} cols={cols} pattern={pattern}/>
       {rowList.flatMap(row=>colList.map(col=>{
         const cell={row,col},piece=pieces.find(p=>sameCell(p,cell)),definition=piece&&project.pieceTypes.find(t=>t.id===piece.type),regions=project.regions.filter(r=>r.cells.some(c=>sameCell(c,cell)));
-        if(mini)return <div key={`${row}-${col}`} className={`cell ${(row+col)%2?'dark':'light'}`}>{regions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}}/>)}{piece&&<PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>}</div>;
+        const legacyRegions=['checker','hex'].includes(pattern)?regions:[];
+        if(mini)return <div key={`${row}-${col}`} className={`cell ${(row+col)%2?'dark':'light'}`}>{legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}}/>)}{piece&&<PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>}</div>;
         return <button type="button" key={`${row}-${col}`} data-row={row} data-col={col} className={`cell ${(row+col)%2?'dark':'light'} ${selected&&sameCell(selected,cell)?'selected':''} ${lastMove&&(sameCell(lastMove.to,cell)||(lastMove.from&&sameCell(lastMove.from,cell)))?'last-move':''} ${drag?.target&&sameCell(drag.target,cell)?'drag-target':''} ${invalid&&sameCell(invalid.cell,cell)?'invalid-target':''}`}
-          aria-label={`${coord(cell,rows)}${piece?` ${definition?.neutral?'中立':sideLabel(project,piece.side)}${definition?.shape==='xiangqi'?pieceSymbol(definition,piece.side):definition?.name||piece.type}`:' 空格'}`} role={mini?undefined:'gridcell'} tabIndex={mini?-1:0}
+          aria-label={`${coord(cell,rows)}${piece?` ${definition?.neutral?'中立':sideLabel(project,piece.side)}${definition?.shape==='xiangqi'?pieceSymbol(definition,piece.side):definition?.name||piece.type}`:' 空格'}`} title={regions.map(r=>r.name).join(' · ')||undefined} role={mini?undefined:'gridcell'} tabIndex={mini?-1:0}
           onClick={e=>{if(e.detail>0&&performance.now()-lastDrag.current<250)return;onCell?.(cell);}}>
-          {regions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}} title={r.name}/>)}
+          {legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}} title={r.name}/>)}
           {hints.some(h=>sameCell(h,cell))&&<span className={`move-hint ${piece?'capture':''}`}/>}
         </button>;
       }))}
