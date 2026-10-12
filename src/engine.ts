@@ -50,6 +50,7 @@ export function hints(project:Project,state:GameState,from?:{row:number;col:numb
 export async function applyMove(project:Project,state:GameState,move:Move,signal?:AbortSignal):Promise<GameState>{
   if(state.winner)throw new Error('这局已经结束，可以重新开始。');
   if(!move||!move.to||!inside(project,move.to)||(move.from&&!inside(project,move.from)))throw new Error('落点不在棋盘内。');
+  if (move.action !== undefined && (project.rules.engine !== 'custom' || typeof move.action !== 'string' || !/^[a-z0-9-]{1,64}$/.test(move.action))) throw new Error('无效的规则操作。');
   let next:GameState=structuredClone(state),text='';
   if(project.rules.engine==='chess'){
     if(!move.from||!state.fen)throw new Error('请先选择棋子。');
@@ -99,7 +100,7 @@ export async function applyMove(project:Project,state:GameState,move:Move,signal
     const result=await runRule(project.rules.code,state,move,project,signal);
     if(!result.valid)throw new Error(result.message||'规则不允许这一步。');
     next={...next,pieces:result.pieces!,turn:result.turn!,winner:result.winner??null,data:result.data||state.data};
-    text=`${move.from?coord(move.from,project.board.rows)+' → ':''}${coord(move.to,project.board.rows)}`;
+    text=result.message||`${move.from?coord(move.from,project.board.rows)+' → ':''}${coord(move.to,project.board.rows)}`;
   }
   next.history=[...state.history,{text,side:state.turn,...move}];
   return next;

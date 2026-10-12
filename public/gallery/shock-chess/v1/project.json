@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "id": "shock-chess",
+  "name": "震棋",
+  "description": "黑先白后，落子击退周围八格棋子，连四获胜。参考 chess-room 及日出333视频：https://www.bilibili.com/video/BV1ch4y1c7Kn/。原规则设计者与授权状态尚未核实。",
+  "board": {
+    "rows": 10,
+    "cols": 10,
+    "pattern": "grid",
+    "light": "#e8d7b6",
+    "dark": "#dcc6a0",
+    "coordinates": true,
+    "theme": "custom"
+  },
+  "pieceTypes": [
+    {
+      "id": "stone",
+      "name": "棋石",
+      "symbol": "●",
+      "shape": "stone"
+    }
+  ],
+  "pieces": [],
+  "regions": [],
+  "rules": {
+    "engine": "custom",
+    "code": "// 震棋：参考用户 chess-room 实现及日出333的视频介绍。\n// https://www.bilibili.com/video/BV1ch4y1c7Kn/ （原规则设计者与授权状态尚未核实）\nconst shockDirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];\nconst shockLines = [[0,1],[1,0],[1,1],[1,-1]];\nconst shockSame = (a,b) => a.row === b.row && a.col === b.col;\nconst shockInside = (c,project) => c && Number.isInteger(c.row) && Number.isInteger(c.col) && c.row >= 0 && c.row < project.board.rows && c.col >= 0 && c.col < project.board.cols;\nfunction shockWins(pieces,side) {\n  const occupied = new Set(pieces.filter(p => p.side === side).map(p => p.row+','+p.col));\n  return pieces.filter(p => p.side === side).some(p => shockLines.some(([dr,dc]) => [1,2,3].every(n => occupied.has((p.row+dr*n)+','+(p.col+dc*n)))));\n}\nfunction onMove(state,move,project) {\n  const fail = message => ({valid:false,message});\n  if (state.winner) return fail('本局已经结束。');\n  if (move.from || move.action || !shockInside(move.to,project)) return fail('请在棋盘空位落子。');\n  if (state.pieces.some(p => shockSame(p,move.to))) return fail('这个位置已有棋子。');\n  const placed = {id:'shock-'+state.history.length+'-'+move.to.row+'-'+move.to.col,type:project.pieceTypes[0].id,side:state.turn,...move.to};\n  const before = [...state.pieces,placed], turn = state.turn === 'black' ? 'white' : 'black';\n  // 与参考版本相同：新落子已连四时立即结束，不再击退。\n  if (shockWins(before,state.turn)) return {valid:true,pieces:before,turn,winner:state.turn,data:{lastAction:'win-before-shock'}};\n  const occupied = new Set(before.map(p => p.row+','+p.col));\n  const pieces = before.flatMap(piece => {\n    if (piece === placed) return [{...piece}];\n    const dr = piece.row-placed.row, dc = piece.col-placed.col;\n    if (Math.max(Math.abs(dr),Math.abs(dc)) !== 1) return [{...piece}];\n    const to = {row:piece.row+dr,col:piece.col+dc};\n    if (!shockInside(to,project)) return []; // 出界移除。\n    if (occupied.has(to.row+','+to.col)) return [{...piece}]; // 受阻不动，不连锁。\n    return [{...piece,...to}]; // 所有击退依据击退前的棋盘同时发生。\n  });\n  const black = shockWins(pieces,'black'), white = shockWins(pieces,'white');\n  const winner = black && white ? 'draw' : black ? 'black' : white ? 'white' : pieces.length === project.board.rows*project.board.cols ? 'draw' : null;\n  return {valid:true,pieces,turn,winner,data:{lastAction:'shock'}};\n}\nfunction getLegalMoves(state,project) {\n  if (state.winner) return [];\n  const occupied = new Set(state.pieces.map(p => p.row+','+p.col)), moves = [];\n  const priority = to => shockDirs.filter(([dr,dc]) => occupied.has((to.row+dr)+','+(to.col+dc))).length*8-Math.abs(to.row-(project.board.rows-1)/2)-Math.abs(to.col-(project.board.cols-1)/2);\n  for (let row=0;row<project.board.rows;row++) for (let col=0;col<project.board.cols;col++) if (!occupied.has(row+','+col)) moves.push({to:{row,col}});\n  return moves.sort((a,b) => priority(b.to)-priority(a.to));\n}\nfunction evaluate(state,side,project) {\n  let score = 0;\n  const at = new Map(state.pieces.map(p => [p.row+','+p.col,p.side]));\n  for (const piece of state.pieces) {\n    const sign = piece.side === side ? 1 : -1;\n    score += sign*(project.board.rows+project.board.cols-Math.abs(piece.row-(project.board.rows-1)/2)-Math.abs(piece.col-(project.board.cols-1)/2));\n    for (const [dr,dc] of shockLines) {\n      const behind = {row:piece.row-dr,col:piece.col-dc};\n      if (at.get(behind.row+','+behind.col) === piece.side) continue;\n      let length = 1;\n      while (at.get((piece.row+dr*length)+','+(piece.col+dc*length)) === piece.side) length++;\n      const ahead = {row:piece.row+dr*length,col:piece.col+dc*length};\n      const open = Number(shockInside(behind,project) && !at.has(behind.row+','+behind.col))+Number(shockInside(ahead,project) && !at.has(ahead.row+','+ahead.col));\n      score += sign*(length >= 4 ? 5000 : length === 3 ? [6,100,180][open] : length === 2 ? [1,8,18][open] : 0);\n    }\n  }\n  return score;\n}\nfunction getGameView(state) {\n  return state.winner ? {} : {interaction:'place',message:'点击空位落子。周围八格的棋子同时向外退一格：受阻不动，出界移除。落子已连四则立即获胜；否则击退后再判连四。'};\n}\n",
+    "winLength": 4,
+    "firstTurn": "black"
+  },
+  "ui": {
+    "accent": "#537a61",
+    "showHints": false,
+    "showHistory": true
+  }
+}

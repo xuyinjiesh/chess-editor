@@ -11,6 +11,7 @@
     "test:gallery-publish": "node --experimental-strip-types --test scripts/test-gallery-publish.mjs",
     "server": "node server/relay.mjs",
     "gallery:add": "node --experimental-strip-types scripts/gallery.mjs add",
+    "gallery:featured": "node --experimental-strip-types scripts/generate-featured-gallery.mjs",
     "gallery:check": "node --experimental-strip-types scripts/gallery.mjs check"
   },
   "dependencies": {

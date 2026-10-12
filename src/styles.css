@@ -24,3 +24,12 @@
 .layout-preview.xiangqi{background:linear-gradient(45deg,transparent 48%,#aab599 49%,#aab599 51%,transparent 52%)}
 .red-side .side-dot.white{background:#aa4435;border-color:#903528}.red-side .player-avatar.white{color:#a2392d;background:#f5e4d2;border-color:#e4c8a4}
 .check-banner{padding:10px 12px;border:1px solid #e7c5b3;border-radius:6px;background:#fbefe4;color:#9e4730;font-size:11px;margin:12px 0}
+
+/* Rule-driven game controls and source attribution. */
+.token.neutral{background:#9aa9a4;color:#edf2ed;border-color:#62776e;box-shadow:inset 0 0 0 3px #bdc8c0;font-size:clamp(12px,2vw,22px);width:66%;height:66%;border-radius:38%}
+.xiangqi-piece.white{color:var(--piece-white,#a2392d)}.xiangqi-piece.black{color:var(--piece-black,#344138)}
+.custom-rule-panel{max-width:680px;margin:14px auto;padding:14px 17px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font-size:12px;line-height:1.8}
+.custom-rule-panel p{margin:0 0 10px}.custom-rule-panel p:last-child{margin:0}.custom-rule-panel .button{margin-top:2px}
+.gallery-play-info .custom-rule-panel{margin:0 0 20px}.gallery-credits{padding:24px 0 36px;border-top:1px solid var(--line);margin-top:28px;max-width:1000px}
+.gallery-credits h2{font-size:17px}.gallery-credits p{font-size:12px;line-height:1.9;color:var(--muted);white-space:pre-line}.gallery-credits>div{display:flex;gap:18px;flex-wrap:wrap}.gallery-credits a{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:12px}
+@media(min-width:761px){.gallery-grid.gallery-pair{grid-template-columns:repeat(2,minmax(0,1fr))}}

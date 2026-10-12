@@ -53,7 +53,7 @@ GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库
 ```js
 function onMove(state, move, project) {
   // state: { pieces, turn, winner, history, data }
-  // move: { from?: {row,col}, to: {row,col}, promotion?: 'q'|'r'|'b'|'n' }
+  // move: { from?: {row,col}, to: {row,col}, promotion?: 'q'|'r'|'b'|'n', action?: string }
   // project: board, pieceTypes, regions, rules, ui ...
   // 移动型规则先选棋子，落子型规则可没有 from。
   return {
@@ -66,7 +66,21 @@ function onMove(state, move, project) {
 }
 ```
 
-拒绝走子返回 `{ valid: false, message: '原因' }`。棋子对象为 `{id,type,side,row,col}`，其中 `type` 对应 `pieceTypes[].id`。移动、翻面和升变时保留原棋子的 `id`，新建棋子才分配新 ID，让移动动画连续。规则可通过完整状态转换实现连跳、传送、额外回合、资源、特殊胜利条件等。当前阵营数量固定为白 / 黑两方。
+拒绝走子返回 `{ valid: false, message: '原因' }`。棋子对象为 `{id,type,side,row,col}`，其中 `type` 对应 `pieceTypes[].id`。移动、翻面和升变时保留原棋子的 `id`，新建棋子才分配新 ID，让移动动画连续。规则可通过完整状态转换实现连跳、传送、额外回合、资源、特殊胜利条件等。内部阵营仍固定为 white / black。可在 `ui.sideLabels` 和 `ui.sideColors` 中分别提供 `{white,black}` 名称和六位十六进制颜色。`pieceTypes[].neutral: true` 标记中立棋子：为兼容格式仍保存 side 字段，但不会按该阵营选中或计数；实际归属、阻挡及吃子由规则解释。
+
+自定义规则还可提供 `getGameView(state,project)`，在试玩期间于隔离沙箱内执行：
+
+```js
+function getGameView(state,project) {
+  return {
+    message: '请选择被吃棋子的放回位置。',
+    interaction: 'place', // move / place / swap
+    actions: [{label:'确认布阵',move:{action:'confirm-setup',to:{row:6,col:1}}}],
+  };
+}
+```
+
+`message` 只显示纯文本，`actions` 最多 16 个，走法仍经 `onMove` 校验。`action` 为 1–64 位小写字母、数字或短横线的自定义动作名，仍须提供棋盘内的 `to`。`place` 使点击直接落子，`swap` 允许选中己方两枚棋子提交交换，`move` 的落点提示由 `getLegalMoves` 提供（可包含吃己方棋子的走法）。缺省保持原有移动交互。AI 仍只使用 `getLegalMoves`，因此人工布阵交换不必加入搜索树。成功返回的 `message` 可用作棋谱文本。浏览作品介绍或编辑棋盘时不运行这些钩子。
 
 每次执行会创建无同源权限的 sandbox iframe，在其中创建专用 Worker。CSP 禁止网络访问，Worker 无 DOM / localStorage 权限，主页面在期限结束后移除整个沙箱。返回的棋子、回合和状态经过结构校验。浏览器沙箱不为恶意代码提供独立进程内存配额，极端资源分配仍可能造成标签页资源耗尽；不要载入未知来源的代码。
 

@@ -15,10 +15,12 @@ export function customAdapter(project: Project): SearchAdapter {
   // Retain only the yielded successor, not the entire explored subtree.
   const cache = new WeakMap<GameState, { move: string; state: GameState }>();
   async function simulate(state: GameState, move: Move): Promise<GameState | null> {
+    if (move?.action !== undefined && (typeof move.action !== 'string' || !/^[a-z0-9-]{1,64}$/.test(move.action))) throw new Error('getLegalMoves 返回了无效操作。');
     if (!move || !validCell(move.to) || (move.from !== undefined && !validCell(move.from)) || (move.promotion !== undefined && !['q', 'r', 'b', 'n'].includes(move.promotion))) throw new Error('getLegalMoves 返回了无效走法。');
     const result = await hooks.onMove(structuredClone(state), structuredClone(move), structuredClone(project));
     if (!result || typeof result.valid !== 'boolean') throw new Error('onMove 需要返回 { valid: boolean, ... }。');
     if (!result.valid) return null;
+    if (result.message !== undefined && typeof result.message !== 'string') throw new Error('规则 message 必须是文本。');
     if (!['white', 'black'].includes(result.turn!) || ![undefined, null, 'white', 'black', 'draw'].includes(result.winner)) throw new Error('规则返回的回合或胜负无效。');
     if (!Array.isArray(result.pieces) || result.pieces.length > project.board.rows * project.board.cols) throw new Error('规则返回的棋子列表无效。');
     const cells = new Set<string>(), ids = new Set<string>();
@@ -29,7 +31,7 @@ export function customAdapter(project: Project): SearchAdapter {
     }
     if (result.data !== undefined && (!result.data || typeof result.data !== 'object' || Array.isArray(result.data) || JSON.stringify(result.data).length > 50000)) throw new Error('自定义状态 data 必须是小于 50 KB 的对象。');
     const coord = (c: Cell) => `${String.fromCharCode(97 + c.col)}${project.board.rows - c.row}`;
-    return { ...state, pieces: structuredClone(result.pieces), turn: result.turn!, winner: result.winner ?? null, data: structuredClone(result.data || state.data), history: [...state.history, { ...move, side: state.turn, text: `${move.from ? coord(move.from) + ' → ' : ''}${coord(move.to)}` }] };
+    return { ...state, pieces: structuredClone(result.pieces), turn: result.turn!, winner: result.winner ?? null, data: structuredClone(result.data || state.data), history: [...state.history, { ...move, side: state.turn, text: result.message || `${move.from ? coord(move.from) + ' → ' : ''}${coord(move.to)}` }] };
   }
   return {
     async *moves(state, check) {

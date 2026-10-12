@@ -30,9 +30,9 @@ export function galleryCover(project: Project): string {
   for (const region of project.regions) for (const c of region.cells) lines.push(`<rect x="${c.col * unit + 2}" y="${c.row * unit + 2}" width="40" height="40" rx="5" fill="${region.color}" fill-opacity=".3"/>`);
   for (const piece of project.pieces) {
     const type = project.pieceTypes.find(p => p.id === piece.type)!;
-    const x = piece.col * unit + unit / 2, y = piece.row * unit + unit / 2, white = piece.side === 'white';
-    if (type.shape !== 'chess') lines.push(`<circle cx="${x}" cy="${y}" r="17" fill="${white ? '#fffdf4' : '#303730'}" stroke="${white ? '#9a927e' : '#141b17'}" stroke-width="1.5"/>`);
-    if (type.shape !== 'stone') lines.push(`<text x="${x}" y="${y + 1}" text-anchor="middle" dominant-baseline="central" font-family="'Segoe UI Symbol','Noto Sans Symbols 2',serif" font-size="${type.shape === 'chess' ? 35 : 24}" fill="${white ? type.shape === 'chess' ? '#fffdf4' : '#843d2c' : type.shape === 'chess' ? '#202a23' : '#fffdf4'}" ${type.shape === 'chess' ? 'stroke="#37372d" stroke-width=".5" paint-order="stroke"' : ''}>${escape(pieceSymbol(type, piece.side))}</text>`);
+    const x = piece.col * unit + unit / 2, y = piece.row * unit + unit / 2, white = piece.side === 'white', neutral = type.neutral;
+    if (type.shape !== 'chess') lines.push(`<circle cx="${x}" cy="${y}" r="17" fill="${neutral ? '#a9b5af' : type.shape === 'xiangqi' ? '#fff2d3' : white ? '#fffdf4' : '#303730'}" stroke="${white ? '#9a927e' : '#141b17'}" stroke-width="1.5"/>`);
+    if (type.shape !== 'stone') lines.push(`<text x="${x}" y="${y + 1}" text-anchor="middle" dominant-baseline="central" font-family="'Segoe UI Symbol','Noto Sans Symbols 2',serif" font-size="${type.shape === 'chess' ? 35 : 24}" fill="${type.shape === 'xiangqi' ? project.ui.sideColors?.[piece.side] || (white ? '#a2392d' : '#344138') : white ? type.shape === 'chess' ? '#fffdf4' : '#843d2c' : type.shape === 'chess' ? '#202a23' : '#fffdf4'}" ${type.shape === 'chess' ? 'stroke="#37372d" stroke-width=".5" paint-order="stroke"' : ''}>${escape(pieceSymbol(type, piece.side))}</text>`);
   }
   return lines.join('') + '</g></svg>';
 }
