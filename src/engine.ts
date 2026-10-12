@@ -47,7 +47,7 @@ export function hints(project:Project,state:GameState,from?:{row:number;col:numb
   if(project.rules.engine==='reversi'){const list=[];for(let row=0;row<project.board.rows;row++)for(let col=0;col<project.board.cols;col++)if(reversiFlips(state.pieces,row,col,state.turn).length)list.push({row,col});return list;}
   return [];
 }
-export async function applyMove(project:Project,state:GameState,move:Move):Promise<GameState>{
+export async function applyMove(project:Project,state:GameState,move:Move,signal?:AbortSignal):Promise<GameState>{
   if(state.winner)throw new Error('这局已经结束，可以重新开始。');
   if(!move||!move.to||!inside(project,move.to)||(move.from&&!inside(project,move.from)))throw new Error('落点不在棋盘内。');
   let next:GameState=structuredClone(state),text='';
@@ -96,7 +96,7 @@ export async function applyMove(project:Project,state:GameState,move:Move):Promi
     if(!reversiHasMove(project,next.pieces,next.turn)){next.turn=state.turn;if(!reversiHasMove(project,next.pieces,next.turn))next.winner=stoneWinner(next.pieces);}
     text=`${coord(move.to,project.board.rows)} · 翻转 ${flips.length}`;
   }else{
-    const result=await runRule(project.rules.code,state,move,project);
+    const result=await runRule(project.rules.code,state,move,project,signal);
     if(!result.valid)throw new Error(result.message||'规则不允许这一步。');
     next={...next,pieces:result.pieces!,turn:result.turn!,winner:result.winner??null,data:result.data||state.data};
     text=`${move.from?coord(move.from,project.board.rows)+' → ':''}${coord(move.to,project.board.rows)}`;

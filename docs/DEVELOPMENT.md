@@ -34,6 +34,8 @@ GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库
 
 ## AI 接口
 
+本地电脑对手与下面的模型创作接口独立：前者无需模型服务。搜索接口、规则适配、预算和浏览器验证见[本地 AI 对弈](LOCAL_AI.md)。
+
 在「AI 助手 → 配置模型」填写：
 
 1. API 基地址，例如服务商提供的 `https://host/v1`，也可填完整 `/chat/completions` 路径。

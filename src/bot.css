@@ -1,0 +1,7 @@
+.bot-setup select{width:100%;margin-top:9px;min-height:40px;border:1px solid var(--line);border-radius:7px;background:var(--surface,#fffefb);color:inherit;padding:9px;font:inherit}
+.bot-status{padding:15px;margin:16px 0;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.bot-status-heading{display:flex;align-items:center;gap:7px;color:var(--accent);font-size:12px}.bot-status-heading>span{margin-left:auto;font-size:10px}
+.bot-status>p{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.7;margin:12px 0 5px}.bot-status>small{font-size:10px;opacity:.75}.bot-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px}
+.bot-status .error-box{display:block;overflow-wrap:anywhere}.bot-setup .muted{line-height:1.8}
+[data-theme=dark] .bot-setup select{background:#222b24;color:#dde6d4;color-scheme:dark}
+@media(max-width:720px){.top-nav{gap:12px}.top-nav .bot-nav{font-size:10px}.bot-status{margin-top:14px}}

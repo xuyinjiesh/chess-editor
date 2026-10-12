@@ -22,6 +22,30 @@ function onMove(state, move, project) {
   const next = state.turn === 'white' ? 'black' : 'white';
   return { valid: true, pieces, turn: next,
     winner: pieces.some(p => p.side === next) ? null : state.turn };
+}
+
+// 人机对弈：只枚举实际合法的走法，避免搜索器逐格试探。
+function getLegalMoves(state, project) {
+  const moves = [];
+  for (const piece of state.pieces) {
+    if (piece.side !== state.turn) continue;
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const to = { row: piece.row + dr, col: piece.col + dc };
+      if (to.row < 0 || to.col < 0 || to.row >= project.board.rows || to.col >= project.board.cols) continue;
+      const move = { from: { row: piece.row, col: piece.col }, to };
+      if (onMove(structuredClone(state), move, project).valid) moves.push(move);
+    }
+  }
+  return moves;
+}
+
+// 分数越高，表示局面对 side 越有利；胜负由 onMove 决定。
+function evaluate(state, side, project) {
+  return state.pieces.reduce((score, p) => {
+    const center = Math.min(p.row, project.board.rows - 1 - p.row)
+      + Math.min(p.col, project.board.cols - 1 - p.col);
+    return score + (p.side === side ? 1 : -1) * (100 + center * 3);
+  }, 0);
 }`;
 const base = (id: string, name: string, description: string): Project => ({version:1,id,name,description,board:{rows:8,cols:8,pattern:'checker',light:'#f0d9b5',dark:'#d8b98c',coordinates:true,theme:'wood'},pieceTypes:[],pieces:[],regions:[],rules:{engine:'custom',code:CUSTOM_CODE,winLength:5,firstTurn:'white'},ui:{accent:'#2f6b63',showHints:true,showHistory:true}});
 const chess = base('chess', '国际象棋', '在 64 个格子里，创造无限可能。');
