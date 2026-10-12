@@ -1,4 +1,4 @@
-import { BOARD_THEMES, type BoardTheme } from './appearance';
+import { BOARD_THEMES, type BoardTheme } from './appearance.ts';
 export type Side = 'white' | 'black';
 export type Engine = 'chess' | 'xiangqi' | 'gomoku' | 'reversi' | 'custom';
 export type Cell = { row: number; col: number };

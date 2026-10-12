@@ -38,10 +38,10 @@ export function isTypingTarget(target:EventTarget|null){
 
 // The viewport already excludes headings/toolbars. Fit the board and both
 // player strips to its actual size, including rectangular and tall boards.
-export function useBoardFit(rows:number,cols:number,coordinates:boolean){
+export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=true){
   const ref=useRef<HTMLDivElement>(null),[size,setSize]=useState(480);
   useLayoutEffect(()=>{
-    const el=ref.current;if(!el)return;
+    const el=ref.current;if(!el||!enabled)return;
     const measure=()=>{
       const {width,height}=el.getBoundingClientRect(),left=coordinates?24:0,bottom=coordinates?22:0,frame=28;
       const fit=(height-92-bottom-frame-8)*cols/rows+left+frame;
@@ -49,7 +49,7 @@ export function useBoardFit(rows:number,cols:number,coordinates:boolean){
     };
     measure();const observer=new ResizeObserver(measure);observer.observe(el);
     return()=>observer.disconnect();
-  },[rows,cols,coordinates]);
+  },[rows,cols,coordinates,enabled]);
   return {ref,size};
 }
 

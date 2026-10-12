@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "npm run gallery:check && tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run",
-    "server": "node server/relay.mjs"
+    "test": "vitest run && npm run test:gallery-publish",
+    "test:gallery-publish": "node --experimental-strip-types --test scripts/test-gallery-publish.mjs",
+    "server": "node server/relay.mjs",
+    "gallery:add": "node --experimental-strip-types scripts/gallery.mjs add",
+    "gallery:check": "node --experimental-strip-types scripts/gallery.mjs check"
   },
   "dependencies": {
     "chess.js": "^1.4.0",

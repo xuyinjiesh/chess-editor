@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "id": "adjacent-duel",
+  "name": "邻步对决",
+  "description": "每次只走一格，三枚棋子彼此掩护。用最简单的走法展开对决。",
+  "board": {
+    "rows": 5,
+    "cols": 5,
+    "pattern": "cells",
+    "light": "#eaf2ec",
+    "dark": "#d5e5db",
+    "coordinates": true,
+    "theme": "jade"
+  },
+  "pieceTypes": [
+    {
+      "id": "token",
+      "name": "棋子",
+      "symbol": "✦",
+      "shape": "token"
+    }
+  ],
+  "pieces": [
+    {
+      "id": "white-1",
+      "type": "token",
+      "side": "white",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "white-2",
+      "type": "token",
+      "side": "white",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "white-3",
+      "type": "token",
+      "side": "white",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "black-1",
+      "type": "token",
+      "side": "black",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "black-2",
+      "type": "token",
+      "side": "black",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "black-3",
+      "type": "token",
+      "side": "black",
+      "row": 0,
+      "col": 3
+    }
+  ],
+  "regions": [],
+  "rules": {
+    "engine": "custom",
+    "code": "// 可使用 state、move、project，坐标从 0 开始。\n// 返回 { valid, pieces, turn, winner?, data?, message? }。\n// 此示例：每个棋子可以走到相邻格，吃掉对方棋子。\nfunction onMove(state, move, project) {\n  const at = (p, c) => c && p.row === c.row && p.col === c.col;\n  const piece = state.pieces.find(p => at(p, move.from));\n  if (!piece || piece.side !== state.turn)\n    return { valid: false, message: '请选择己方棋子' };\n  const target = state.pieces.find(p => at(p, move.to));\n  if (target?.side === state.turn)\n    return { valid: false, message: '目标格已有己方棋子' };\n  const distance = Math.max(Math.abs(piece.row - move.to.row),\n                           Math.abs(piece.col - move.to.col));\n  if (distance !== 1)\n    return { valid: false, message: '只能移动一格' };\n  const blocked = project.regions.some(r => r.tag === 'blocked'\n    && r.cells.some(c => at(c, move.to)));\n  if (blocked) return { valid: false, message: '不能进入禁区' };\n  const pieces = state.pieces.filter(p => p.id !== target?.id)\n    .map(p => p.id === piece.id ? { ...p, ...move.to } : p);\n  const next = state.turn === 'white' ? 'black' : 'white';\n  return { valid: true, pieces, turn: next,\n    winner: pieces.some(p => p.side === next) ? null : state.turn };\n}\n\n// 人机对弈：只枚举实际合法的走法，避免搜索器逐格试探。\nfunction getLegalMoves(state, project) {\n  const moves = [];\n  for (const piece of state.pieces) {\n    if (piece.side !== state.turn) continue;\n    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {\n      const to = { row: piece.row + dr, col: piece.col + dc };\n      if (to.row < 0 || to.col < 0 || to.row >= project.board.rows || to.col >= project.board.cols) continue;\n      const move = { from: { row: piece.row, col: piece.col }, to };\n      if (onMove(structuredClone(state), move, project).valid) moves.push(move);\n    }\n  }\n  return moves;\n}\n\n// 分数越高，表示局面对 side 越有利；胜负由 onMove 决定。\nfunction evaluate(state, side, project) {\n  return state.pieces.reduce((score, p) => {\n    const center = Math.min(p.row, project.board.rows - 1 - p.row)\n      + Math.min(p.col, project.board.cols - 1 - p.col);\n    return score + (p.side === side ? 1 : -1) * (100 + center * 3);\n  }, 0);\n}",
+    "winLength": 5,
+    "firstTurn": "white"
+  },
+  "ui": {
+    "accent": "#2f6b63",
+    "showHints": true,
+    "showHistory": true
+  }
+}
