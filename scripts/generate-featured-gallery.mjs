@@ -5,6 +5,7 @@ import { validateProject } from '../src/model.ts';
 import { galleryCover } from '../src/gallery-cover.ts';
 import { validateCatalog } from '../src/gallery-format.ts';
 import { originalGames } from './original-games.mjs';
+import { incidentGame } from './incident-game.mjs';
 
 // Explicit maintenance command for curated games; never runs on build.
 // Existing unrelated publications and older revisions are preserved.
@@ -22,6 +23,7 @@ for (const side of ['white','black']) {
 }
 for (let col=0;col<6;col++) miniPieces.push({id:'river-'+col,type:'river-stone',side:'black',row:3,col});
 const games = [
+  await incidentGame(root),
   ...await originalGames(root),
   {
     project: {...base,id:'mini-eternal',name:'迷你永恒棋',description:'日出333设计。车马炮争夺禁区，吃掉的棋子由行动方放回其所属半场。规则来源：'+miniSource+'。授权状态尚未核实。',board:board(7,6,'custom'),pieceTypes:[{id:'rook',name:'车',symbol:'車',shape:'xiangqi'},{id:'horse',name:'马',symbol:'馬',shape:'xiangqi'},{id:'cannon',name:'炮',symbol:'炮',shape:'xiangqi'},{id:'river-stone',name:'河中石',symbol:'◆',shape:'token',neutral:true}],pieces:miniPieces,regions:[{id:'red-zone',name:'红方禁区',tag:'red-forbidden',color:'#bc574d',cells:[{row:6,col:2},{row:6,col:3}]},{id:'blue-zone',name:'蓝方禁区',tag:'blue-forbidden',color:'#547ead',cells:[{row:0,col:2},{row:0,col:3}]},{id:'river',name:'河界',tag:'river',color:'#719a9b',cells:Array.from({length:6},(_,col)=>({row:3,col}))}],rules:{engine:'custom',firstTurn:'white',winLength:4,code:await readFile(resolve(root,'scripts/rules/mini-eternal.js'),'utf8')},ui:{...base.ui,sideLabels:{white:'红方',black:'蓝方'},sideColors:{white:'#a2392d',black:'#355f99'}}},
@@ -47,4 +49,4 @@ for (const game of games) {
   await writeFile(resolve(folder,'cover.svg'),galleryCover(project));
 }
 await writeFile(catalogPath,JSON.stringify(validateCatalog({...current,entries}),null,2)+'\n');
-console.log('已更新足球棋、角斗棋、迷你永恒棋、震棋、形意棋的 v1 快照与署名。');
+console.log('已更新异变象棋、足球棋、角斗棋、迷你永恒棋、震棋、形意棋的 v1 快照与署名。');

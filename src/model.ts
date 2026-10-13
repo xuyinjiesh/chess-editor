@@ -51,7 +51,7 @@ export function validateProject(input: unknown): Project {
   if (!['checker', 'grid', 'cells', 'xiangqi', 'hex'].includes(String(b.pattern)) || !color(b.light) || !color(b.dark) || typeof b.coordinates !== 'boolean') throw new Error('棋盘样式无效。');
   if (b.pattern === 'xiangqi' && (b.rows !== 10 || b.cols !== 9)) throw new Error('中国象棋棋盘样式需要 9 列 × 10 行。');
   if (b.theme !== undefined && b.theme !== 'custom' && !BOARD_THEMES.some(t=>t.id===b.theme)) throw new Error('棋盘主题无效。');
-  if (!Array.isArray(p.pieceTypes) || !p.pieceTypes.length || p.pieceTypes.length > 32) throw new Error('需要 1–32 种棋子。');
+  if (!Array.isArray(p.pieceTypes) || !p.pieceTypes.length || p.pieceTypes.length > 64) throw new Error('需要 1–64 种棋子。');
   const types = new Set<string>();
   for (const t of p.pieceTypes) {
     if (!isObject(t) || !shortString(t.id, 30) || !t.id || types.has(t.id) || !shortString(t.name, 30) || !shortString(t.symbol, 8) || (t.blackSymbol !== undefined && !shortString(t.blackSymbol, 8)) || !['chess','xiangqi','stone','token'].includes(String(t.shape))) throw new Error('棋子定义无效或 ID 重复。');
@@ -73,7 +73,7 @@ export function validateProject(input: unknown): Project {
     if (!isObject(r) || !shortString(r.id) || regionIds.has(String(r.id)) || !shortString(r.name, 40) || !shortString(r.tag, 40) || !color(r.color) || !Array.isArray(r.cells) || r.cells.length > 576 || !r.cells.every(cellValid)) throw new Error('区域配置无效。');
     regionIds.add(r.id);
   }
-  if (!isObject(p.rules) || !['chess', 'xiangqi', 'gomoku', 'reversi', 'custom'].includes(String(p.rules.engine)) || !shortString(p.rules.code, 40000) || !['white','black'].includes(String(p.rules.firstTurn)) || !Number.isInteger(p.rules.winLength) || Number(p.rules.winLength) < 3 || Number(p.rules.winLength) > 24) throw new Error('规则配置无效。');
+  if (!isObject(p.rules) || !['chess', 'xiangqi', 'gomoku', 'reversi', 'custom'].includes(String(p.rules.engine)) || !shortString(p.rules.code, 200000) || !['white','black'].includes(String(p.rules.firstTurn)) || !Number.isInteger(p.rules.winLength) || Number(p.rules.winLength) < 3 || Number(p.rules.winLength) > 24) throw new Error('规则配置无效。');
   if (p.rules.engine === 'chess' && (b.rows !== 8 || b.cols !== 8)) throw new Error('标准国际象棋需要 8 × 8 棋盘；变体请使用自定义规则。');
   if (p.rules.engine === 'xiangqi' && (b.rows !== 10 || b.cols !== 9)) throw new Error('中国象棋规则需要 9 列 × 10 行；变体请使用自定义规则。');
   if (!isObject(p.ui) || !color(p.ui.accent) || typeof p.ui.showHints !== 'boolean' || typeof p.ui.showHistory !== 'boolean') throw new Error('界面配置无效。');

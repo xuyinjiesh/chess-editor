@@ -26,7 +26,7 @@ async function screenshot(name){await page.screenshot({path:`artifacts/original-
 try {
   mkdirSync('artifacts',{recursive:true});
   await page.goto(url);await expect.poll(draft).toBeTruthy();const original=await draft();
-  await choice('作品广场').click();await page.getByLabel('搜索作品').fill('原创');await expect(page.locator('.gallery-card')).toHaveCount(2);
+  await choice('作品广场').click();await page.getByLabel('搜索作品').fill('原创');await expect(page.locator('.gallery-card')).toHaveCount(3);
   await page.getByRole('link',{name:'查看足球棋'}).click();await expect(page.getByRole('heading',{name:'足球棋',exact:true})).toBeVisible();
   await expect(page.locator('.gallery-byline')).toContainText('xuyinjie');assert.equal(page.workers().length,0);await expect(page.locator('iframe')).toHaveCount(0);
   await screenshot('football-detail');

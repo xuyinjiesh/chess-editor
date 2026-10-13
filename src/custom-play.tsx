@@ -3,9 +3,9 @@ import { runSandbox } from './sandbox';
 import { sameCell, type Cell, type GameState, type Move, type Piece, type Project } from './model';
 import { RuleCards, validateRuleCards, type RuleCard } from './custom-cards';
 
-export type RuleChoice = { action: string; label: string; interaction: 'move' | 'place' };
+export type RuleChoice = { action: string; label: string; interaction: 'move' | 'place'; description?: string };
 export type RuleMarker = { cell: Cell; label: string };
-export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move }[]; moves: Move[]; cards?: RuleCard[]; choices?: RuleChoice[]; markers?: RuleMarker[] };
+export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move; description?: string }[]; moves: Move[]; cards?: RuleCard[]; choices?: RuleChoice[]; markers?: RuleMarker[]; details?: { title: string; text: string }[] };
 const empty: CustomView = { actions: [], moves: [] };
 export const neutralPiece = (project: Project, piece: Piece) => !!project.pieceTypes.find(t => t.id === piece.type)?.neutral;
 
@@ -20,23 +20,32 @@ export function validateCustomView(input: unknown, project: Project): CustomView
   if (raw.message !== undefined && (typeof raw.message !== 'string' || raw.message.length > 1000)) throw new Error('规则提示需为不超过 1,000 字的文本。');
   if (raw.interaction !== undefined && !['move','place','swap'].includes(String(raw.interaction))) throw new Error('规则交互模式无效。');
   if (!Array.isArray(raw.moves) || raw.moves.length > 10000 || !Array.isArray(raw.actions) || raw.actions.length > 16) throw new Error('规则提示或操作数量超出限制。');
-  const actions = raw.actions.map((a: { label: string; move: Move }) => {
+  const description = (value: unknown): string | undefined => {
+    if (value !== undefined && (typeof value !== 'string' || value.length > 300)) throw new Error('操作说明需为不超过 300 字的文本。');
+    return value as string | undefined;
+  };
+  const actions = raw.actions.map((a: { label: string; move: Move; description?: string }) => {
     if (!a || typeof a.label !== 'string' || !a.label.trim() || a.label.length > 60) throw new Error('规则操作需要简短的文本名称。');
-    return { label: a.label, move: move(a.move) };
+    return { label: a.label, move: move(a.move), ...(a.description !== undefined ? {description:description(a.description)} : {}) };
   });
   if (raw.choices !== undefined && (!Array.isArray(raw.choices) || raw.choices.length > 16)) throw new Error('规则选项数量超出限制。');
   const choiceIds = new Set<string>();
   const choices = (raw.choices as RuleChoice[] | undefined)?.map(c => {
     if (!c || typeof c.action !== 'string' || !/^[a-z0-9-]{1,64}$/.test(c.action) || choiceIds.has(c.action) || typeof c.label !== 'string' || !c.label.trim() || c.label.length > 60 || !['move','place'].includes(c.interaction)) throw new Error('规则选项无效。');
     choiceIds.add(c.action);
-    return {action:c.action,label:c.label,interaction:c.interaction};
+    return {action:c.action,label:c.label,interaction:c.interaction,...(c.description !== undefined ? {description:description(c.description)} : {})};
   });
   if (raw.markers !== undefined && (!Array.isArray(raw.markers) || raw.markers.length > 576)) throw new Error('棋子标记数量超出限制。');
   const markers = (raw.markers as RuleMarker[] | undefined)?.map(m => {
     if (!m || !cell(m.cell) || typeof m.label !== 'string' || !m.label.trim() || m.label.length > 12) throw new Error('棋子标记无效。');
     return {cell:{row:m.cell.row,col:m.cell.col},label:m.label};
   });
-  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards: validateRuleCards(raw.cards), choices, markers };
+  if (raw.details !== undefined && (!Array.isArray(raw.details) || raw.details.length > 8)) throw new Error('最多显示 8 组规则说明。');
+  const details = (raw.details as CustomView['details'])?.map(d => {
+    if (!d || typeof d.title !== 'string' || !d.title.trim() || d.title.length > 60 || typeof d.text !== 'string' || d.text.length > 8000) throw new Error('规则说明无效。');
+    return {title:d.title,text:d.text};
+  });
+  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards: validateRuleCards(raw.cards), choices, markers, details };
 }
 
 export function customMoveControls(view: CustomView, selectedAction?: string) {
@@ -93,12 +102,14 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
 }
 
 export function CustomRulePanel({ view, error, disabled, onMove, selectedAction, onSelectAction, flipped }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void; flipped?: boolean }) {
-  if (!view.message && !view.actions.length && !view.cards?.length && !view.choices?.length && !error) return null;
+  if (!view.message && !view.actions.length && !view.cards?.length && !view.choices?.length && !view.details?.length && !error) return null;
   return <div className="custom-rule-panel" aria-label="当前操作">
     {view.message && <p role="status">{view.message}</p>}
     {!!view.choices?.length && <div className="rule-choices" role="group" aria-label="选择操作">{view.choices.map(choice => <button key={choice.action} className="button" aria-pressed={selectedAction === choice.action} disabled={disabled} onClick={() => onSelectAction?.(choice.action)}>{choice.label}</button>)}</div>}
+    {view.choices?.find(c => c.action === selectedAction)?.description && <p className="rule-choice-description">{view.choices.find(c => c.action === selectedAction)!.description}</p>}
     {!!view.cards?.length && <RuleCards cards={view.cards} selectedAction={selectedAction} disabled={disabled} onSelect={onSelectAction} flipped={flipped}/>}
-    {view.actions.map((action, i) => <button key={i} className="button primary" disabled={disabled} onClick={() => onMove(action.move)}>{action.label}</button>)}
+    <div className="rule-actions">{view.actions.map((action, i) => <button key={i} className={`button ${action.description ? 'rule-skill-action' : 'primary'}`} disabled={disabled} onClick={() => onMove(action.move)}>{action.description ? <><strong>{action.label}</strong><small>{action.description}</small></> : action.label}</button>)}</div>
+    {view.details?.map((d, i) => <details className="rule-details" key={i}><summary>{d.title}</summary><p>{d.text}</p></details>)}
     {error && <p className="error-box" role="alert">规则提示加载失败：{error}</p>}
   </div>;
 }

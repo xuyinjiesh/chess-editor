@@ -57,6 +57,6 @@ describe('portable project validation',()=>{
   });
   it('round-trips every template',()=>{for(const p of TEMPLATES)expect(validateProject(JSON.parse(JSON.stringify(p)))).toEqual(p);});
   it('rejects overlapping pieces and invalid colors',()=>{const p=clone(TEMPLATES[0]);p.pieces[1]={...p.pieces[1],row:p.pieces[0].row,col:p.pieces[0].col};expect(()=>validateProject(p)).toThrow('同一个');expect(()=>validateProject({...TEMPLATES[0],board:{...TEMPLATES[0].board,light:'url(https://bad)'}})).toThrow();});
-  it('rejects incompatible dimensions and oversized code',()=>{expect(()=>validateProject({...TEMPLATES[0],board:{...TEMPLATES[0].board,rows:9}})).toThrow('8 × 8');const p:Project=clone(TEMPLATES[4]);p.rules.code=' '.repeat(40001);expect(()=>validateProject(p)).toThrow();});
+  it('rejects incompatible dimensions and oversized code',()=>{expect(()=>validateProject({...TEMPLATES[0],board:{...TEMPLATES[0].board,rows:9}})).toThrow('8 × 8');const p:Project=clone(TEMPLATES[4]);p.rules.code=' '.repeat(200001);expect(()=>validateProject(p)).toThrow();});
   it('strips unknown fields and rejects invalid region cells',()=>{expect(validateProject({...TEMPLATES[4],html:'<script>bad</script>'})).not.toHaveProperty('html');expect(()=>validateProject({...TEMPLATES[4],regions:[{id:'r',name:'r',tag:'blocked',color:'#aabbcc',cells:[{row:99,col:1}]}]})).toThrow('区域');});
 });
