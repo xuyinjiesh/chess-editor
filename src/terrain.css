@@ -33,6 +33,8 @@
 }
 .board-terrain { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .board-terrain * { pointer-events: none; }
+.football-pitch-lines{fill:none;stroke:#f3f6df;stroke-width:6;opacity:.85}
+.piece-status-marker{position:absolute;right:0;top:0;min-width:14px;padding:1px 3px;border-radius:8px;background:#fff9dc;color:#244b37;box-shadow:0 1px 3px #16332255;font:600 clamp(9px,1vw,13px)/1.25 sans-serif;z-index:2}
 .terrain-fill { fill: var(--region-color,var(--river-fill)); fill-opacity: .14; }
 .terrain-river .terrain-fill { fill-opacity: .38; }
 .xiangqi-river .terrain-fill { fill-opacity: .64; }

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { validateProject } from '../src/model.ts';
 import { galleryCover } from '../src/gallery-cover.ts';
 import { validateCatalog } from '../src/gallery-format.ts';
+import { originalGames } from './original-games.mjs';
 
 // Explicit maintenance command for curated games; never runs on build.
 // Existing unrelated publications and older revisions are preserved.
@@ -21,6 +22,7 @@ for (const side of ['white','black']) {
 }
 for (let col=0;col<6;col++) miniPieces.push({id:'river-'+col,type:'river-stone',side:'black',row:3,col});
 const games = [
+  ...await originalGames(root),
   {
     project: {...base,id:'mini-eternal',name:'迷你永恒棋',description:'日出333设计。车马炮争夺禁区，吃掉的棋子由行动方放回其所属半场。规则来源：'+miniSource+'。授权状态尚未核实。',board:board(7,6,'custom'),pieceTypes:[{id:'rook',name:'车',symbol:'車',shape:'xiangqi'},{id:'horse',name:'马',symbol:'馬',shape:'xiangqi'},{id:'cannon',name:'炮',symbol:'炮',shape:'xiangqi'},{id:'river-stone',name:'河中石',symbol:'◆',shape:'token',neutral:true}],pieces:miniPieces,regions:[{id:'red-zone',name:'红方禁区',tag:'red-forbidden',color:'#bc574d',cells:[{row:6,col:2},{row:6,col:3}]},{id:'blue-zone',name:'蓝方禁区',tag:'blue-forbidden',color:'#547ead',cells:[{row:0,col:2},{row:0,col:3}]},{id:'river',name:'河界',tag:'river',color:'#719a9b',cells:Array.from({length:6},(_,col)=>({row:3,col}))}],rules:{engine:'custom',firstTurn:'white',winLength:4,code:await readFile(resolve(root,'scripts/rules/mini-eternal.js'),'utf8')},ui:{...base.ui,sideLabels:{white:'红方',black:'蓝方'},sideColors:{white:'#a2392d',black:'#355f99'}}},
     entry: {id:'mini-eternal',revision:1,title:'迷你永恒棋',summary:'棋子不会轻易离场。调动车、马、炮，利用吃子与放回，抢先进入对方禁区。',author:'日出333 · 规则设计',tags:['吃子','布阵','策略'],publishedAt:'2026-10-12',instructions:'棋盘为 6 列 × 7 行，红方在下、蓝方在上，各有两车、两马、两炮；第 4 行的六枚河中石属于中立棋子，不能移动。\n开局双方依次布阵：在己方六个指定起始格内点击或拖动棋子互换位置，确认后红方先走。电脑采用预设布阵。\n车沿横竖线移动，不能越子；马走日字且不蹩腿；炮平走，吃子时必须隔一枚棋子。可以吃敌方、己方棋子和河中石。\n吃掉有色棋子后，仍由吃子方操作，把被吃棋子放在其所属半场的任一空位，再换对方走；河中石被吃后永久移除。红方半场为第 1–3 行，蓝方为第 5–7 行，河界不属于任何一方。\n红方禁区为 c1、d1，蓝方为 c7、d7。己方禁区内的己方棋子为守护者，任何一方都不能吃它；每方至多一名守护者。任一棋子进入对方禁区立即获胜。',credits:'规则设计：日出333。规则依据新棋吧 Wiki《迷你永恒棋》。'+rights,sources:[{label:'迷你永恒棋 · 原规则',url:miniSource}]},
@@ -45,4 +47,4 @@ for (const game of games) {
   await writeFile(resolve(folder,'cover.svg'),galleryCover(project));
 }
 await writeFile(catalogPath,JSON.stringify(validateCatalog({...current,entries}),null,2)+'\n');
-console.log('已更新迷你永恒棋、震棋、形意棋的 v1 快照与来源署名。');
+console.log('已更新足球棋、角斗棋、迷你永恒棋、震棋、形意棋的 v1 快照与署名。');

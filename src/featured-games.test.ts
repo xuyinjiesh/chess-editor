@@ -52,7 +52,7 @@ describe('curated gallery artifacts and safe rule view',()=>{
     expect(cover).toContain('fill="#344138"'); expect(cover).toContain('fill="#a2392d"');
   });
   it('validates source URLs and never accepts executable schemes',()=>{
-    const entry=JSON.parse(readFileSync(new URL('../public/gallery/index.json',import.meta.url),'utf8')).entries[0];
+    const entry=JSON.parse(readFileSync(new URL('../public/gallery/index.json',import.meta.url),'utf8')).entries.find((e:{id:string})=>e.id==='mini-eternal');
     for(const url of ['javascript:alert(1)','data:text/html,x','file:///secret']) expect(()=>validateGalleryEntry({...entry,sources:[{label:'source',url}]})).toThrow();
     expect(validateGalleryEntry(entry).sources![0].url).toMatch(/^https:/);
   });

@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { boardAppearance, pieceLetterLayout } from './appearance';
 import { BoardTerrain } from './BoardTerrain';
+import type { RuleMarker } from './custom-play';
 import { coord, sameCell, sideLabel, pieceSymbol, type Cell, type Piece, type PieceType, type Project } from './model';
 const CHESS_GLYPHS:Record<string,[string,string]>={k:['♔','♚'],q:['♕','♛'],r:['♖','♜'],b:['♗','♝'],n:['♘','♞'],p:['♙','♟']};
 function RiverStone(){
@@ -38,7 +39,7 @@ function BoardLines({rows,cols,pattern}:{rows:number;cols:number;pattern:Project
     {xiangqi?<g className="river-labels"><text x="250" y="503">楚 河</text><text x="650" y="503">漢 界</text></g>:rows===15&&cols===15&&<g className="star-points">{[[3,3],[3,11],[7,7],[11,3],[11,11]].map(([r,c])=><circle key={`${r}-${c}`} cx={c*100+50} cy={r*100+50} r="7"/>)}</g>}
   </svg>;
 }
-function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,invalid}:{piece:Piece;definition?:PieceType;row:number;col:number;selected:boolean;exiting:boolean;entering:boolean;drag?:{x:number;y:number};invalid?:number}){
+function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,invalid,marker}:{marker?:string;piece:Piece;definition?:PieceType;row:number;col:number;selected:boolean;exiting:boolean;entering:boolean;drag?:{x:number;y:number};invalid?:number}){
   const body=useRef<HTMLDivElement>(null),previous=useRef({side:piece.side,type:piece.type}),arriving=useRef(entering);
   useEffect(()=>{
     const old=previous.current;previous.current={side:piece.side,type:piece.type};
@@ -50,11 +51,11 @@ function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,in
     if(!invalid||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
     body.current?.animate([0,-6,6,-4,4,0].map(x=>({transform:`translateX(${x}px)`})),{duration:320});
   },[invalid]);
-  return <div className={`piece-sprite ${selected?'is-selected':''} ${exiting?'is-exiting':''} ${drag?'is-dragging':''}`} data-piece-id={piece.id} style={{transform:drag?`translate(${drag.x}px,${drag.y}px)`:`translate(calc(${col} * (100% + var(--piece-gap, 0px))),calc(${row} * (100% + var(--piece-gap, 0px))))`}} aria-hidden="true"><div className={`piece-body ${arriving.current?'is-arriving':''}`} ref={body}><PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/></div></div>;
+  return <div className={`piece-sprite ${selected?'is-selected':''} ${exiting?'is-exiting':''} ${drag?'is-dragging':''}`} data-piece-id={piece.id} style={{transform:drag?`translate(${drag.x}px,${drag.y}px)`:`translate(calc(${col} * (100% + var(--piece-gap, 0px))),calc(${row} * (100% + var(--piece-gap, 0px))))`}} aria-hidden="true"><div className={`piece-body ${arriving.current?'is-arriving':''}`} ref={body}><PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>{marker&&<span className="piece-status-marker">{marker}</span>}</div></div>;
 }
 
-type BoardProps={project:Project;pieces:Piece[];selected?:Cell;hints?:Cell[];lastMove?:{from?:Cell;to:Cell};flipped?:boolean;mini?:boolean;onCell?:(c:Cell)=>void;onDrop?:(from:Cell,to:Cell)=>void;onPick?:(cell:Cell)=>void;canDrag?:(piece:Piece)=>boolean;invalid?:{cell:Cell;sequence:number};tool?:string};
-export function Board({project,pieces,selected,hints=[],lastMove,flipped=false,mini=false,onCell,onDrop,onPick,canDrag,invalid,tool='select'}:BoardProps){
+type BoardProps={project:Project;pieces:Piece[];selected?:Cell;hints?:Cell[];markers?:RuleMarker[];lastMove?:{from?:Cell;to:Cell};flipped?:boolean;mini?:boolean;onCell?:(c:Cell)=>void;onDrop?:(from:Cell,to:Cell)=>void;onPick?:(cell:Cell)=>void;canDrag?:(piece:Piece)=>boolean;invalid?:{cell:Cell;sequence:number};tool?:string};
+export function Board({project,pieces,selected,hints=[],markers=[],lastMove,flipped=false,mini=false,onCell,onDrop,onPick,canDrag,invalid,tool='select'}:BoardProps){
   const {rows,cols,pattern,light,dark,coordinates}=project.board;
   const appearance=boardAppearance(project.board);
   const rowList=Array.from({length:rows},(_,i)=>flipped?rows-1-i:i),colList=Array.from({length:cols},(_,i)=>flipped?cols-1-i:i);
@@ -105,13 +106,13 @@ export function Board({project,pieces,selected,hints=[],lastMove,flipped=false,m
         const legacyRegions=['checker','hex'].includes(pattern)?regions:[];
         if(mini)return <div key={`${row}-${col}`} className={`cell ${(row+col)%2?'dark':'light'}`}>{legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}}/>)}{piece&&<PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>}</div>;
         return <button type="button" key={`${row}-${col}`} data-row={row} data-col={col} className={`cell ${(row+col)%2?'dark':'light'} ${selected&&sameCell(selected,cell)?'selected':''} ${lastMove&&(sameCell(lastMove.to,cell)||(lastMove.from&&sameCell(lastMove.from,cell)))?'last-move':''} ${drag?.target&&sameCell(drag.target,cell)?'drag-target':''} ${invalid&&sameCell(invalid.cell,cell)?'invalid-target':''}`}
-          aria-label={`${coord(cell,rows)}${piece?` ${definition?.neutral?'中立':sideLabel(project,piece.side)}${definition?.shape==='xiangqi'?pieceSymbol(definition,piece.side):definition?.name||piece.type}`:' 空格'}`} title={regions.map(r=>r.name).join(' · ')||undefined} role={mini?undefined:'gridcell'} tabIndex={mini?-1:0}
+          aria-label={`${coord(cell,rows)}${piece?` ${definition?.neutral?'中立':sideLabel(project,piece.side)}${definition?.shape==='xiangqi'?pieceSymbol(definition,piece.side):definition?.name||piece.type}`:' 空格'}${markers.find(m=>sameCell(m.cell,cell))?' '+markers.find(m=>sameCell(m.cell,cell))!.label:''}`} title={regions.map(r=>r.name).join(' · ')||undefined} role={mini?undefined:'gridcell'} tabIndex={mini?-1:0}
           onClick={e=>{if(e.detail>0&&performance.now()-lastDrag.current<250)return;onCell?.(cell);}}>
           {legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}} title={r.name}/>)}
           {hints.some(h=>sameCell(h,cell))&&<span className={`move-hint ${piece?'capture':''}`}/>}
         </button>;
       }))}
-      {!mini&&<div className="piece-layer">{[...pieces,...exits.filter(p=>!pieces.some(n=>n.id===p.id))].map(piece=><PieceSprite key={piece.id} piece={piece} definition={project.pieceTypes.find(t=>t.id===piece.type)} row={flipped?rows-1-piece.row:piece.row} col={flipped?cols-1-piece.col:piece.col} selected={!!selected&&sameCell(selected,piece)} exiting={!pieces.some(p=>p.id===piece.id)} entering={ready.current} drag={drag?.id===piece.id?drag:undefined} invalid={invalid&&sameCell(invalid.cell,piece)?invalid.sequence:undefined}/>)}</div>}
+      {!mini&&<div className="piece-layer">{[...pieces,...exits.filter(p=>!pieces.some(n=>n.id===p.id))].map(piece=><PieceSprite key={piece.id} piece={piece} marker={pieces.some(p=>p.id===piece.id)?markers.find(m=>sameCell(m.cell,piece))?.label:undefined} definition={project.pieceTypes.find(t=>t.id===piece.type)} row={flipped?rows-1-piece.row:piece.row} col={flipped?cols-1-piece.col:piece.col} selected={!!selected&&sameCell(selected,piece)} exiting={!pieces.some(p=>p.id===piece.id)} entering={ready.current} drag={drag?.id===piece.id?drag:undefined} invalid={invalid&&sameCell(invalid.cell,piece)?invalid.sequence:undefined}/>)}</div>}
     </div></div>
     {coordinates&&!mini&&<div className="file-labels">{colList.map(c=><span key={c}>{String.fromCharCode(97+c)}</span>)}</div>}
   </div>;

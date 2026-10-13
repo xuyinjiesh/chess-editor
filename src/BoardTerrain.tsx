@@ -1,6 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 import type { Project } from './model';
-import { regionGeometry, terrainKind } from './terrain';
+import { footballPitchPath, hasFootballPitch, regionGeometry, terrainKind } from './terrain';
 
 export function BoardTerrain({ project, flipped }: { project: Project; flipped: boolean }) {
   const id = useId().replace(/:/g, ''), { rows, cols, pattern } = project.board;
@@ -15,6 +15,7 @@ export function BoardTerrain({ project, flipped }: { project: Project; flipped: 
       <g className="terrain-zone terrain-palace">{[50,750].map(y=><g key={y}><rect x="350" y={y} width="200" height="200"/><rect className="palace-texture" x="350" y={y} width="200" height="200" fill={`url(#${id}-palace)`}/></g>)}</g>
       <g className="terrain-zone terrain-river xiangqi-river"><rect className="terrain-fill" x="50" y="450" width="800" height="100"/><rect className="terrain-texture" x="50" y="450" width="800" height="100" fill={`url(#${id}-waves)`}/><path className="terrain-shore" d="M50 460Q250 453 450 460T850 460M50 540Q250 547 450 540T850 540"/></g>
     </>}
+    {hasFootballPitch(project) && <path d={footballPitchPath} className="football-pitch-lines"/>}
     {project.regions.map(region => {
       const { fill, outline } = regionGeometry(region.cells, rows, cols, flipped), kind = terrainKind(region);
       const corner = kind === 'forbidden' ? region.cells.map(c => flipped ? {row:rows-1-c.row,col:cols-1-c.col} : c).sort((a,b)=>a.row-b.row||a.col-b.col)[0] : undefined;

@@ -1,0 +1,511 @@
+{
+  "version": 1,
+  "id": "football",
+  "name": "足球棋",
+  "description": "xuyinjie 原创。15 × 23 球场上的回合制足球：调动守门员、后卫、中场和前锋，控球、抢球、蓄力与射门，把球踢入或带入对方球门即获胜。",
+  "board": {
+    "rows": 23,
+    "cols": 15,
+    "pattern": "cells",
+    "light": "#9dbb8d",
+    "dark": "#739d77",
+    "coordinates": true,
+    "theme": "custom"
+  },
+  "pieceTypes": [
+    {
+      "id": "gk",
+      "name": "守门员",
+      "symbol": "守",
+      "shape": "token"
+    },
+    {
+      "id": "df",
+      "name": "后卫",
+      "symbol": "卫",
+      "shape": "token"
+    },
+    {
+      "id": "mf",
+      "name": "中场",
+      "symbol": "中",
+      "shape": "token"
+    },
+    {
+      "id": "fw",
+      "name": "前锋",
+      "symbol": "锋",
+      "shape": "token"
+    },
+    {
+      "id": "ball",
+      "name": "足球",
+      "symbol": "⚽",
+      "shape": "token",
+      "neutral": true
+    }
+  ],
+  "pieces": [
+    {
+      "id": "black-0",
+      "type": "gk",
+      "side": "black",
+      "row": 1,
+      "col": 7
+    },
+    {
+      "id": "black-1",
+      "type": "df",
+      "side": "black",
+      "row": 3,
+      "col": 5
+    },
+    {
+      "id": "black-2",
+      "type": "df",
+      "side": "black",
+      "row": 3,
+      "col": 9
+    },
+    {
+      "id": "black-3",
+      "type": "mf",
+      "side": "black",
+      "row": 7,
+      "col": 4
+    },
+    {
+      "id": "black-4",
+      "type": "mf",
+      "side": "black",
+      "row": 7,
+      "col": 10
+    },
+    {
+      "id": "black-5",
+      "type": "fw",
+      "side": "black",
+      "row": 10,
+      "col": 6
+    },
+    {
+      "id": "black-6",
+      "type": "fw",
+      "side": "black",
+      "row": 10,
+      "col": 8
+    },
+    {
+      "id": "white-0",
+      "type": "gk",
+      "side": "white",
+      "row": 21,
+      "col": 7
+    },
+    {
+      "id": "white-1",
+      "type": "df",
+      "side": "white",
+      "row": 19,
+      "col": 5
+    },
+    {
+      "id": "white-2",
+      "type": "df",
+      "side": "white",
+      "row": 19,
+      "col": 9
+    },
+    {
+      "id": "white-3",
+      "type": "mf",
+      "side": "white",
+      "row": 15,
+      "col": 4
+    },
+    {
+      "id": "white-4",
+      "type": "mf",
+      "side": "white",
+      "row": 15,
+      "col": 10
+    },
+    {
+      "id": "white-5",
+      "type": "fw",
+      "side": "white",
+      "row": 13,
+      "col": 6
+    },
+    {
+      "id": "white-6",
+      "type": "fw",
+      "side": "white",
+      "row": 13,
+      "col": 8
+    },
+    {
+      "id": "football-ball",
+      "type": "ball",
+      "side": "white",
+      "row": 11,
+      "col": 7
+    }
+  ],
+  "regions": [
+    {
+      "id": "pitch",
+      "name": "球场标线",
+      "color": "#f3f6df",
+      "tag": "football-pitch",
+      "cells": []
+    },
+    {
+      "id": "top-goal",
+      "name": "黑方球门",
+      "color": "#f4edc6",
+      "tag": "goal",
+      "cells": [
+        {
+          "row": 0,
+          "col": 5
+        },
+        {
+          "row": 0,
+          "col": 6
+        },
+        {
+          "row": 0,
+          "col": 7
+        },
+        {
+          "row": 0,
+          "col": 8
+        },
+        {
+          "row": 0,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "id": "bottom-goal",
+      "name": "红方球门",
+      "color": "#f4edc6",
+      "tag": "goal",
+      "cells": [
+        {
+          "row": 22,
+          "col": 5
+        },
+        {
+          "row": 22,
+          "col": 6
+        },
+        {
+          "row": 22,
+          "col": 7
+        },
+        {
+          "row": 22,
+          "col": 8
+        },
+        {
+          "row": 22,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "id": "top-penalty",
+      "name": "黑方罚球区",
+      "color": "#e4f0d8",
+      "tag": "penalty",
+      "cells": [
+        {
+          "row": 1,
+          "col": 4
+        },
+        {
+          "row": 1,
+          "col": 5
+        },
+        {
+          "row": 1,
+          "col": 6
+        },
+        {
+          "row": 1,
+          "col": 7
+        },
+        {
+          "row": 1,
+          "col": 8
+        },
+        {
+          "row": 1,
+          "col": 9
+        },
+        {
+          "row": 1,
+          "col": 10
+        },
+        {
+          "row": 2,
+          "col": 4
+        },
+        {
+          "row": 2,
+          "col": 5
+        },
+        {
+          "row": 2,
+          "col": 6
+        },
+        {
+          "row": 2,
+          "col": 7
+        },
+        {
+          "row": 2,
+          "col": 8
+        },
+        {
+          "row": 2,
+          "col": 9
+        },
+        {
+          "row": 2,
+          "col": 10
+        },
+        {
+          "row": 3,
+          "col": 4
+        },
+        {
+          "row": 3,
+          "col": 5
+        },
+        {
+          "row": 3,
+          "col": 6
+        },
+        {
+          "row": 3,
+          "col": 7
+        },
+        {
+          "row": 3,
+          "col": 8
+        },
+        {
+          "row": 3,
+          "col": 9
+        },
+        {
+          "row": 3,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "id": "bottom-penalty",
+      "name": "红方罚球区",
+      "color": "#e4f0d8",
+      "tag": "penalty",
+      "cells": [
+        {
+          "row": 19,
+          "col": 4
+        },
+        {
+          "row": 19,
+          "col": 5
+        },
+        {
+          "row": 19,
+          "col": 6
+        },
+        {
+          "row": 19,
+          "col": 7
+        },
+        {
+          "row": 19,
+          "col": 8
+        },
+        {
+          "row": 19,
+          "col": 9
+        },
+        {
+          "row": 19,
+          "col": 10
+        },
+        {
+          "row": 20,
+          "col": 4
+        },
+        {
+          "row": 20,
+          "col": 5
+        },
+        {
+          "row": 20,
+          "col": 6
+        },
+        {
+          "row": 20,
+          "col": 7
+        },
+        {
+          "row": 20,
+          "col": 8
+        },
+        {
+          "row": 20,
+          "col": 9
+        },
+        {
+          "row": 20,
+          "col": 10
+        },
+        {
+          "row": 21,
+          "col": 4
+        },
+        {
+          "row": 21,
+          "col": 5
+        },
+        {
+          "row": 21,
+          "col": 6
+        },
+        {
+          "row": 21,
+          "col": 7
+        },
+        {
+          "row": 21,
+          "col": 8
+        },
+        {
+          "row": 21,
+          "col": 9
+        },
+        {
+          "row": 21,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "id": "touchline",
+      "name": "底线两侧 · 仅球员可移入",
+      "color": "#425b4e",
+      "tag": "touchline",
+      "cells": [
+        {
+          "row": 0,
+          "col": 0
+        },
+        {
+          "row": 0,
+          "col": 1
+        },
+        {
+          "row": 0,
+          "col": 2
+        },
+        {
+          "row": 0,
+          "col": 3
+        },
+        {
+          "row": 0,
+          "col": 4
+        },
+        {
+          "row": 0,
+          "col": 10
+        },
+        {
+          "row": 0,
+          "col": 11
+        },
+        {
+          "row": 0,
+          "col": 12
+        },
+        {
+          "row": 0,
+          "col": 13
+        },
+        {
+          "row": 0,
+          "col": 14
+        },
+        {
+          "row": 22,
+          "col": 0
+        },
+        {
+          "row": 22,
+          "col": 1
+        },
+        {
+          "row": 22,
+          "col": 2
+        },
+        {
+          "row": 22,
+          "col": 3
+        },
+        {
+          "row": 22,
+          "col": 4
+        },
+        {
+          "row": 22,
+          "col": 10
+        },
+        {
+          "row": 22,
+          "col": 11
+        },
+        {
+          "row": 22,
+          "col": 12
+        },
+        {
+          "row": 22,
+          "col": 13
+        },
+        {
+          "row": 22,
+          "col": 14
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "engine": "custom",
+    "code": "// 足球棋 · xuyinjie 原创。根据 chess-room 移植，带球入门同样进球。\nconst FB_DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];\nconst FB_KNIGHTS = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];\nconst FB_NAMES = {gk:'守门员',df:'后卫',mf:'中场',fw:'前锋'};\nconst fbSame = (a,b) => a.row === b.row && a.col === b.col;\nconst fbAt = (s,c) => s.pieces.find(p => fbSame(p,c));\nconst fbInside = c => c && Number.isInteger(c.row) && Number.isInteger(c.col) && c.row >= 0 && c.row < 23 && c.col >= 0 && c.col < 15;\nconst fbGoal = c => (c.row === 0 || c.row === 22) && c.col >= 5 && c.col <= 9;\nconst fbBallInside = c => fbInside(c) && (c.row > 0 && c.row < 22 || fbGoal(c));\nconst fbCoord = c => String.fromCharCode(97+c.col)+(23-c.row);\nconst fbOther = side => side === 'white' ? 'black' : 'white';\nfunction fbBall(s) {\n  return s.pieces.find(p => p.id === s.data.carrierId && FB_NAMES[p.type]) || s.pieces.find(p => p.type === 'ball');\n}\nfunction fbReady(s,p) {\n  return s.data.carrierId === p.id && s.data.charged === true;\n}\nfunction fbPlayerTargets(s,p) {\n  const targets = [], limit = {gk:2,df:3,mf:3,fw:4}[p.type];\n  if (!limit) return targets;\n  for (const [dr,dc] of FB_DIRS) for (let n=1;n<=limit;n++) {\n    if (p.type === 'mf' && n*(Math.abs(dr)+Math.abs(dc)) > 3) break;\n    const to = {row:p.row+dr*n,col:p.col+dc*n};\n    if (!fbInside(to)) break;\n    const target = fbAt(s,to);\n    if (target && target.type !== 'ball') break;\n    targets.push(to);\n  }\n  if (p.type === 'mf') for (const [dr,dc] of FB_KNIGHTS) {\n    const to = {row:p.row+dr,col:p.col+dc}, target = fbAt(s,to);\n    if (fbInside(to) && (!target || target.type === 'ball')) targets.push(to);\n  }\n  return targets;\n}\nfunction fbKickTargets(s,p) {\n  const ball = fbBall(s), targets = new Map();\n  if (!ball || Math.max(Math.abs(ball.row-p.row),Math.abs(ball.col-p.col)) > 1) return [];\n  const ready = fbReady(s,p), br = ball.row-p.row, bc = ball.col-p.col;\n  const passable = to => fbBallInside(to) && (!fbAt(s,to) || fbAt(s,to).type !== 'ball' && fbAt(s,to).side === p.side);\n  function ray(start,dr,dc) {\n    for (let n=1;n<24;n++) {\n      const to = {row:start.row+dr*n,col:start.col+dc*n};\n      if (!passable(to) || fbSame(to,ball)) break;\n      targets.set(to.row+','+to.col,to);\n      if (fbAt(s,to)) break; // A teammate receives; an opponent blocks.\n    }\n  }\n  for (const [dr,dc] of FB_DIRS) if (ready && p.type !== 'fw' || br*dr+bc*dc >= 0) ray(ball,dr,dc);\n  if (p.type === 'mf' || ready && ['fw','df'].includes(p.type)) for (const [dr,dc] of FB_KNIGHTS) ray(ball,dr,dc);\n  if (ready && p.type !== 'gk') for (const [dr,dc] of FB_DIRS) {\n    const bend = {row:ball.row+dr,col:ball.col+dc};\n    if (!passable(bend)) continue;\n    if (dr === 0 || dc === 0) {\n      ray(bend,dr+dc,dc-dr);\n      ray(bend,dr-dc,dc+dr);\n    } else {\n      ray(bend,dr,0);\n      ray(bend,0,dc);\n    }\n  }\n  return [...targets.values()];\n}\nfunction fbValidSetup(s,p) {\n  return p.board.rows === 23 && p.board.cols === 15 && !!fbBall(s);\n}\nfunction onMove(state,move,project) {\n  if (state.winner) return {valid:false,message:'比赛已结束。'};\n  if (!fbValidSetup(state,project)) return {valid:false,message:'足球棋需要 15 列 × 23 行的球场和一枚足球。'};\n  if (!fbInside(move.from) || !fbInside(move.to)) return {valid:false,message:'先选择己方球员，再选择目的格。'};\n  const player = fbAt(state,move.from), action = move.action || 'move-player';\n  if (!player || !FB_NAMES[player.type] || player.side !== state.turn) return {valid:false,message:'请选择当前阵营的球员。'};\n  if (!['move-player','kick-ball'].includes(action)) return {valid:false,message:'请选择移动或踢球。'};\n  const targets = action === 'kick-ball' ? fbKickTargets(state,player) : fbPlayerTargets(state,player);\n  if (!targets.some(c => fbSame(c,move.to))) return {valid:false,message:action === 'kick-ball' ? '这个落点不符合踢球规则，请查看踢球提示。' : '球员不能这样移动，也不能吃掉其他球员。'};\n  let pieces = state.pieces.map(p => ({...p}));\n  const data = {...state.data}, ball = fbBall(state), beforeCarrier = state.pieces.find(p => p.id === data.carrierId);\n  data.ballId = data.ballId || state.pieces.find(p => p.type === 'ball')?.id || 'football-ball';\n  let text;\n  if (action === 'move-player') {\n    const target = fbAt(state,move.to);\n    if (target?.type === 'ball') { pieces = pieces.filter(p => p.id !== target.id); data.carrierId = player.id; }\n    Object.assign(pieces.find(p => p.id === player.id),move.to);\n    text = FB_NAMES[player.type]+(data.carrierId === player.id ? '带球' : '移动')+' '+fbCoord(player)+' → '+fbCoord(move.to);\n  } else {\n    pieces = pieces.filter(p => p.type !== 'ball');\n    const receiver = pieces.find(p => fbSame(p,move.to));\n    data.carrierId = receiver?.id || null;\n    if (!receiver) pieces.push({id:data.ballId,type:'ball',side:'white',...move.to});\n    text = FB_NAMES[player.type]+'踢球 '+fbCoord(ball)+' → '+fbCoord(move.to)+(receiver ? ' · 队友接球' : '');\n  }\n  const afterCarrier = pieces.find(p => p.id === data.carrierId);\n  if (!beforeCarrier || !afterCarrier || beforeCarrier.id !== afterCarrier.id || !fbSame(beforeCarrier,afterCarrier)) data.charged = false;\n  else if (beforeCarrier.side === state.turn) data.charged = true;\n  const nextBall = afterCarrier || pieces.find(p => p.type === 'ball');\n  const winner = fbGoal(nextBall) ? nextBall.row === 0 ? 'white' : 'black' : null;\n  if (winner) text += ' · '+(winner === 'white' ? '红方' : '黑方')+'进球获胜！';\n  return {valid:true,pieces,data,turn:fbOther(state.turn),winner,message:text};\n}\nfunction getLegalMoves(state,project) {\n  if (state.winner || !fbValidSetup(state,project)) return [];\n  const moves = [];\n  for (const p of state.pieces) if (p.side === state.turn && FB_NAMES[p.type]) {\n    const from = {row:p.row,col:p.col};\n    for (const to of fbKickTargets(state,p)) moves.push({from,to,action:'kick-ball'});\n    for (const to of fbPlayerTargets(state,p)) moves.push({from,to,action:'move-player'});\n  }\n  const ball = fbBall(state), goalRow = state.turn === 'white' ? 0 : 22;\n  const priority = m => {\n    const withBall = m.action === 'kick-ball' || fbAt(state,m.from)?.id === state.data.carrierId;\n    if (withBall) return (fbGoal(m.to) ? m.to.row === goalRow ? 10000 : -10000 : 0) + 100-Math.abs(m.to.row-goalRow)*3-Math.abs(m.to.col-7);\n    return 30-Math.max(Math.abs(m.to.row-ball.row),Math.abs(m.to.col-ball.col))*3;\n  };\n  return moves.sort((a,b) => priority(b)-priority(a));\n}\nfunction evaluate(state,side) {\n  if (state.winner) return state.winner === side ? 100000 : -100000;\n  const ball = fbBall(state);\n  if (!ball) return 0;\n  let score = (11-ball.row)*14;\n  for (const team of ['white','black']) {\n    const players = state.pieces.filter(p => p.side === team && FB_NAMES[p.type]);\n    const distance = Math.min(...players.map(p => Math.max(Math.abs(p.row-ball.row),Math.abs(p.col-ball.col))));\n    const sign = team === 'white' ? 1 : -1;\n    score += sign*(40-distance*8);\n    if (state.data.carrierId && ball.side === team) score += sign*(100+(state.data.charged ? 35 : 0));\n    for (const p of players) if (Math.max(Math.abs(p.row-ball.row),Math.abs(p.col-ball.col)) <= 1) {\n      score += sign*20;\n      if (fbKickTargets(state,p).some(c => fbGoal(c) && c.row === (team === 'white' ? 0 : 22))) score += sign*(state.turn === team ? 600 : 180);\n    }\n  }\n  return side === 'white' ? score : -score;\n}\nfunction getGameView(state) {\n  const ball = fbBall(state), carrier = state.pieces.find(p => p.id === state.data.carrierId);\n  return {\n    interaction:'move', actions:[],\n    choices:[{action:'move-player',label:'移动 / 带球',interaction:'move'},{action:'kick-ball',label:'传球 / 射门',interaction:'move'}],\n    markers:carrier ? [{cell:{row:carrier.row,col:carrier.col},label:state.data.charged ? '⚽蓄' : '⚽'}] : [],\n    message:(state.winner ? '进球！比赛结束。' : carrier ? (carrier.side === 'white' ? '红方' : '黑方')+FB_NAMES[carrier.type]+'在 '+fbCoord(carrier)+' 持球'+(state.data.charged ? '，已蓄力。' : '。') : '足球位于 '+(ball ? fbCoord(ball) : '场外')+'。')+'先选「移动 / 带球」或「传球 / 射门」，再选球员与目的格。球旁八格的球员也能踢球，包括抢走对手脚下的球；持球队员原地不动、行动其他队友一次即可蓄力。',\n  };\n}\n",
+    "winLength": 4,
+    "firstTurn": "white"
+  },
+  "ui": {
+    "accent": "#537a61",
+    "showHints": true,
+    "showHistory": true,
+    "sideLabels": {
+      "white": "红方",
+      "black": "黑方"
+    },
+    "sideColors": {
+      "white": "#ae3f35",
+      "black": "#283c38"
+    }
+  }
+}

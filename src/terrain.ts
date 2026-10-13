@@ -1,4 +1,8 @@
-import type { Cell, Region } from './model.ts';
+import type { Cell, Project, Region } from './model.ts';
+
+// Opt-in by region tag so field markings also survive copying and importing.
+export const hasFootballPitch = (project: Project) => project.board.rows === 23 && project.board.cols === 15 && project.regions.some(r => r.tag === 'football-pitch');
+export const footballPitchPath = 'M0 100H500M1000 100H1500V2200H1000M500 2200H0V100M0 1150H1500M600 1150a150 150 0 1 0 300 0a150 150 0 1 0 -300 0M400 100V400H1100V100M400 2200V1900H1100V2200M500 100V0H1000V100M500 2200V2300H1000V2200';
 
 // Regions use whole logical cells, while pieces sit on their centers. Shared
 // edges are omitted so a painted area has one perimeter, including its holes.

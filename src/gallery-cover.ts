@@ -1,6 +1,6 @@
 import { boardAppearance, pieceLetterLayout } from './appearance.ts';
 import { pieceSymbol, type Project } from './model.ts';
-import { regionGeometry, terrainKind } from './terrain.ts';
+import { footballPitchPath, hasFootballPitch, regionGeometry, terrainKind } from './terrain.ts';
 
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]!));
 const font = "'KaiTi','STKaiti','SimSun','Songti SC',serif";
@@ -29,6 +29,7 @@ export function galleryCover(project: Project): string {
     if (kind !== 'region') lines.push(`<path d="${fill}" fill="url(#${kind === 'river' ? 'river-waves' : 'zone-hatch'})" opacity="${kind === 'river' ? '.4' : '.16'}"/>`);
     lines.push(`<path d="${outline}" fill="none" stroke="${region.color}" stroke-opacity=".6" stroke-width=".65" vector-effect="non-scaling-stroke"/>`);
   }
+  if (hasFootballPitch(project)) lines.push(`<path d="${footballPitchPath}" fill="none" stroke="#f3f6df" stroke-width="6"/>`);
   lines.push('</g>');
   if (['checker', 'hex'].includes(pattern)) for (const region of project.regions) for (const c of region.cells) lines.push(`<rect x="${c.col * unit + 2}" y="${c.row * unit + 2}" width="40" height="40" rx="5" fill="${region.color}" fill-opacity=".3"/>`);
   if (['grid', 'xiangqi', 'cells'].includes(pattern)) {
