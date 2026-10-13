@@ -18,7 +18,7 @@ async function screenshot(name){await page.screenshot({path:`artifacts/gallery-$
 async function open(id){await page.goto(url+`#/gallery/${id}/v1`);await page.reload();await expect(page.getByRole('button',{name:'开始试玩',exact:true})).toBeEnabled();}
 try {
   mkdirSync('artifacts',{recursive:true}); await page.goto(url); await expect.poll(draft).toBeTruthy(); const original=await draft();
-  await page.getByRole('button',{name:'作品广场',exact:true}).click(); await expect(page.locator('.gallery-card')).toHaveCount(2);
+  await page.getByRole('button',{name:'作品广场',exact:true}).click(); await expect(page.locator('.gallery-card')).toHaveCount(new Set(catalog.entries.map(e=>e.id)).size);
   await fits(); await screenshot('desktop');
   await page.getByLabel('搜索作品').fill('不存在的作品'); await expect(page.getByText('没有找到匹配的作品')).toBeVisible();
   await page.getByRole('button',{name:'清除筛选'}).click(); await page.getByLabel('筛选作品分类').selectOption('布阵'); await expect(page.locator('.gallery-card')).toHaveCount(1);
@@ -29,7 +29,7 @@ try {
   await expect(page.getByLabel('来源与权利说明')).toContainText('公开授权状态尚未核实');
   await page.getByRole('button',{name:'分享作品'}).click(); await expect(page.getByLabel('作品分享链接')).toHaveValue(url+'#/gallery/mini-eternal/v1');
   await screenshot('detail'); assert.equal(await draft(),original); assert.equal(page.workers().length,0); await expect(page.locator('iframe')).toHaveCount(0);
-  console.log('PASS two-game catalog, filters, deep links, attribution and nonexecuting preview');
+  console.log('PASS gallery catalog, filters, deep links, attribution and nonexecuting preview');
 
   await page.getByRole('button',{name:'开始试玩',exact:true}).click(); await expect(panel).toContainText('红方布阵');
   await expect(page.locator('.piece-sprite')).toHaveCount(18); await expect(page.locator('.piece-sprite .neutral')).toHaveCount(6);
@@ -111,14 +111,14 @@ try {
   await page.route('**/gallery/index.json',route=>route.fulfill({json:{...catalog,entries:[]}})); await page.goto(url+'#/gallery'); await page.reload(); await expect(page.getByText('第一款作品，等你发布')).toBeVisible(); await page.unroute('**/gallery/index.json');
   console.log('PASS pinned versions, missing catalog/version, retry and empty states');
 
-  await page.setViewportSize({width:390,height:844}); await page.goto(url+'#/gallery'); await page.reload(); await expect(page.locator('.gallery-card')).toHaveCount(2); await fits(); await screenshot('mobile');
+  await page.setViewportSize({width:390,height:844}); await page.goto(url+'#/gallery'); await page.reload(); await expect(page.locator('.gallery-card')).toHaveCount(new Set(catalog.entries.map(e=>e.id)).size); await fits(); await screenshot('mobile');
   await open('mini-eternal'); await fits(); await screenshot('mobile-detail'); await page.getByRole('button',{name:'开始试玩',exact:true}).click(); await expect(panel).toContainText('红方布阵');
   await page.getByRole('button',{name:'确认布阵',exact:true}).click(); await expect(panel).toContainText('蓝方布阵'); await page.getByRole('button',{name:'确认布阵',exact:true}).click(); await expect(panel).toContainText('进入对方禁区获胜');
   await fits(); await screenshot('mobile-play'); await page.getByRole('button',{name:'切换夜间模式'}).click(); await screenshot('mobile-dark'); await fits();
   await open('shock-chess'); await page.getByRole('button',{name:'开始试玩',exact:true}).click(); await expect(panel).toBeVisible(); await cell(4,4).click(); await expect(count).toHaveText('1'); await fits(); await screenshot('mobile-shock');
   await page.setViewportSize({width:1440,height:1000}); await page.getByRole('button',{name:'编辑器',exact:true}).click();
   await page.getByRole('button',{name:'人机对弈',exact:true}).click(); await page.getByLabel('对弈方式').selectOption('watch'); await page.getByLabel('电脑难度').selectOption('hard'); await page.getByRole('button',{name:'开始新的人机对局'}).click();
-  await page.getByRole('button',{name:'作品广场',exact:true}).click(); await expect(page.locator('.gallery-card')).toHaveCount(2); await page.waitForTimeout(2500); await expect(page.locator('iframe')).toHaveCount(0);
+  await page.getByRole('button',{name:'作品广场',exact:true}).click(); await expect(page.locator('.gallery-card')).toHaveCount(new Set(catalog.entries.map(e=>e.id)).size); await page.waitForTimeout(2500); await expect(page.locator('iframe')).toHaveCount(0);
   await page.getByRole('button',{name:'编辑器',exact:true}).click(); await expect(page.locator('.bot-status')).toContainText('电脑已暂停');
   const editorCount=page.locator('.game-metrics > div:first-child strong'), paused=await editorCount.textContent(); await page.waitForTimeout(700); await expect(editorCount).toHaveText(paused);
   assert.deepEqual(errors,[]); console.log('PASS both games on mobile/dark theme, AI cancellation, no overflow or runtime errors');

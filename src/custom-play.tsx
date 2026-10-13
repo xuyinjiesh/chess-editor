@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { runSandbox } from './sandbox';
 import { sameCell, type Cell, type GameState, type Move, type Piece, type Project } from './model';
+import { RuleCards, validateRuleCards, type RuleCard } from './custom-cards';
 
-export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move }[]; moves: Move[] };
+export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move }[]; moves: Move[]; cards?: RuleCard[] };
 const empty: CustomView = { actions: [], moves: [] };
 export const neutralPiece = (project: Project, piece: Piece) => !!project.pieceTypes.find(t => t.id === piece.type)?.neutral;
 
@@ -21,15 +22,16 @@ export function validateCustomView(input: unknown, project: Project): CustomView
     if (!a || typeof a.label !== 'string' || !a.label.trim() || a.label.length > 60) throw new Error('规则操作需要简短的文本名称。');
     return { label: a.label, move: move(a.move) };
   });
-  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move) };
+  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards: validateRuleCards(raw.cards) };
 }
 
 // Rule-provided prompts and moves run in the same opaque worker as onMove.
 // Viewing a gallery card or editing the design never executes this code.
 export function useCustomPlay(project: Project, state: GameState, enabled: boolean) {
   const [loaded, setLoaded] = useState<{ project: Project; state: GameState; view: CustomView; error: string }>();
+  const [selection, setSelection] = useState<{ project: Project; state: GameState; action: string }>();
   useEffect(() => {
-    if (!enabled || project.rules.engine !== 'custom' || state.winner) return;
+    if (!enabled || project.rules.engine !== 'custom') return;
     const controller = new AbortController();
     const code = `onmessage = async event => { try {
       const {project,state} = event.data;
@@ -43,8 +45,11 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
       .catch(error => { if (!controller.signal.aborted) setLoaded({ project, state, view: empty, error: error.message }); });
     return () => controller.abort();
   }, [project, state, enabled]);
-  const current = enabled && loaded?.project === project && loaded.state === state && !state.winner ? loaded : undefined;
+  const current = enabled && loaded?.project === project && loaded.state === state ? loaded : undefined;
   const view = current?.view || empty;
+  const selectable = view.cards?.filter(c => c.action) || [];
+  const selectedAction = selection?.project === project && selection.state === state && selectable.some(c => c.action === selection.action) ? selection.action : selectable[0]?.action;
+  const prepareMove = (move: Move): Move => move.from && !move.action && selectedAction ? {...move,action:selectedAction} : move;
   function click(cell: Cell, selected: Cell | undefined, select: (cell: Cell | undefined) => void, submit: (move: Move) => void) {
     if (view.interaction === 'place') { submit({ to: cell }); return; }
     const piece = state.pieces.find(p => sameCell(p, cell));
@@ -55,16 +60,18 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
     else if (!piece || !neutralPiece(project, piece)) submit({ to: cell });
   }
   return {
-    view, error: current?.error || '', click,
+    view, error: current?.error || '', click, prepareMove, selectedAction,
+    selectAction: (action: string) => setSelection({project,state,action}),
     canDrag: (piece: Piece) => view.interaction !== 'place' && !neutralPiece(project, piece),
-    hints: (selected?: Cell) => view.moves.filter(m => !m.action && (selected ? m.from && sameCell(m.from, selected) : view.interaction === 'place' && !m.from)).map(m => m.to),
+    hints: (selected?: Cell) => view.moves.filter(m => (!m.action || m.action === selectedAction) && (selected ? m.from && sameCell(m.from, selected) : view.interaction === 'place' && !m.from)).map(m => m.to),
   };
 }
 
-export function CustomRulePanel({ view, error, disabled, onMove }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void }) {
-  if (!view.message && !view.actions.length && !error) return null;
+export function CustomRulePanel({ view, error, disabled, onMove, selectedAction, onSelectAction, flipped }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void; flipped?: boolean }) {
+  if (!view.message && !view.actions.length && !view.cards?.length && !error) return null;
   return <div className="custom-rule-panel" aria-label="当前操作">
     {view.message && <p role="status">{view.message}</p>}
+    {!!view.cards?.length && <RuleCards cards={view.cards} selectedAction={selectedAction} disabled={disabled} onSelect={onSelectAction} flipped={flipped}/>}
     {view.actions.map((action, i) => <button key={i} className="button primary" disabled={disabled} onClick={() => onMove(action.move)}>{action.label}</button>)}
     {error && <p className="error-box" role="alert">规则提示加载失败：{error}</p>}
   </div>;

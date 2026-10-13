@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "id": "onitama",
+  "name": "形意棋 · Onitama",
+  "description": "Shimpei Sato 设计的双人招式棋。每方一位师父、四位弟子，五张招式在双方之间流转；擒师或师父入敌庙获胜。规则来源：https://www.arcanewonders.com/wp-content/uploads/2021/05/Onitama-Rulebook.pdf",
+  "board": {
+    "rows": 5,
+    "cols": 5,
+    "pattern": "cells",
+    "light": "#efe3c9",
+    "dark": "#dfccaa",
+    "coordinates": true,
+    "theme": "custom"
+  },
+  "pieceTypes": [
+    {
+      "id": "master",
+      "name": "师父",
+      "symbol": "师",
+      "shape": "token"
+    },
+    {
+      "id": "student",
+      "name": "弟子",
+      "symbol": "徒",
+      "shape": "token"
+    }
+  ],
+  "pieces": [
+    {
+      "id": "white-0",
+      "type": "student",
+      "side": "white",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "white-1",
+      "type": "student",
+      "side": "white",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "white-2",
+      "type": "master",
+      "side": "white",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "white-3",
+      "type": "student",
+      "side": "white",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "white-4",
+      "type": "student",
+      "side": "white",
+      "row": 4,
+      "col": 4
+    },
+    {
+      "id": "black-0",
+      "type": "student",
+      "side": "black",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "black-1",
+      "type": "student",
+      "side": "black",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "black-2",
+      "type": "master",
+      "side": "black",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "black-3",
+      "type": "student",
+      "side": "black",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "black-4",
+      "type": "student",
+      "side": "black",
+      "row": 0,
+      "col": 4
+    }
+  ],
+  "regions": [
+    {
+      "id": "red-temple",
+      "name": "红方庙门",
+      "color": "#bc574d",
+      "tag": "red-temple",
+      "cells": [
+        {
+          "row": 4,
+          "col": 2
+        }
+      ]
+    },
+    {
+      "id": "blue-temple",
+      "name": "蓝方庙门",
+      "color": "#547ead",
+      "tag": "blue-temple",
+      "cells": [
+        {
+          "row": 0,
+          "col": 2
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "engine": "custom",
+    "code": "// Onitama · base game, designed by Shimpei Sato, published by Arcane Wonders.\n// Rules: https://www.arcanewonders.com/wp-content/uploads/2021/05/Onitama-Rulebook.pdf\n// Offsets face up the board (red at the bottom); blue rotates both axes 180°.\nconst onitamaCards = [\n  {id:'tiger',name:'虎',english:'Tiger',stamp:'black',steps:[[-2,0],[1,0]]},\n  {id:'dragon',name:'龙',english:'Dragon',stamp:'white',steps:[[-1,-2],[-1,2],[1,-1],[1,1]]},\n  {id:'frog',name:'蛙',english:'Frog',stamp:'white',steps:[[0,-2],[-1,-1],[1,1]]},\n  {id:'rabbit',name:'兔',english:'Rabbit',stamp:'black',steps:[[0,2],[-1,1],[1,-1]]},\n  {id:'crab',name:'蟹',english:'Crab',stamp:'black',steps:[[0,-2],[-1,0],[0,2]]},\n  {id:'elephant',name:'象',english:'Elephant',stamp:'white',steps:[[0,-1],[-1,-1],[-1,1],[0,1]]},\n  {id:'goose',name:'雁',english:'Goose',stamp:'black',steps:[[-1,-1],[0,-1],[0,1],[1,1]]},\n  {id:'rooster',name:'鸡',english:'Rooster',stamp:'white',steps:[[-1,1],[0,1],[0,-1],[1,-1]]},\n  {id:'monkey',name:'猴',english:'Monkey',stamp:'black',steps:[[-1,-1],[-1,1],[1,-1],[1,1]]},\n  {id:'mantis',name:'螳螂',english:'Mantis',stamp:'white',steps:[[-1,-1],[-1,1],[1,0]]},\n  {id:'horse',name:'马',english:'Horse',stamp:'white',steps:[[-1,0],[0,-1],[1,0]]},\n  {id:'ox',name:'牛',english:'Ox',stamp:'black',steps:[[-1,0],[0,1],[1,0]]},\n  {id:'crane',name:'鹤',english:'Crane',stamp:'black',steps:[[-1,0],[1,-1],[1,1]]},\n  {id:'boar',name:'野猪',english:'Boar',stamp:'white',steps:[[0,-1],[-1,0],[0,1]]},\n  {id:'eel',name:'鳗',english:'Eel',stamp:'black',steps:[[-1,-1],[1,-1],[0,1]]},\n  {id:'cobra',name:'蛇',english:'Cobra',stamp:'white',steps:[[-1,1],[1,1],[0,-1]]},\n];\nconst oniOther = side => side === 'white' ? 'black' : 'white';\nconst oniLabel = side => side === 'white' ? '红方' : '蓝方';\nconst oniSame = (a,b) => a.row === b.row && a.col === b.col;\nconst oniInside = c => c && Number.isInteger(c.row) && Number.isInteger(c.col) && c.row >= 0 && c.row < 5 && c.col >= 0 && c.col < 5;\nconst oniCard = id => onitamaCards.find(c => c.id === id);\nconst oniReady = state => !!state.data.hands;\nfunction oniValidDeal(state) {\n  const {hands,shared} = state.data;\n  if (!hands || !Array.isArray(hands.white) || !Array.isArray(hands.black) || hands.white.length !== 2 || hands.black.length !== 2) return false;\n  const ids = [...hands.white,...hands.black,shared];\n  return new Set(ids).size === 5 && ids.every(id => !!oniCard(id));\n}\nfunction oniMoves(state, side = state.turn) {\n  if (!oniValidDeal(state)) return [];\n  const moves = [], direction = side === 'white' ? 1 : -1;\n  for (const id of state.data.hands[side]) for (const p of state.pieces.filter(p => p.side === side)) {\n    for (const [dr,dc] of oniCard(id).steps) {\n      const to = {row:p.row+dr*direction,col:p.col+dc*direction};\n      if (oniInside(to) && !state.pieces.some(q => q.side === side && oniSame(q,to))) moves.push({from:{row:p.row,col:p.col},to,action:'card-'+id});\n    }\n  }\n  // Immediate wins and captures first, useful even with a short AI budget.\n  const priority = m => {\n    const p = state.pieces.find(p => oniSame(p,m.from)), target = state.pieces.find(p => oniSame(p,m.to));\n    return target?.type === 'master' || p.type === 'master' && m.to.col === 2 && m.to.row === (side === 'white' ? 0 : 4) ? 100 : target ? 10 : 0;\n  };\n  return moves.sort((a,b) => priority(b)-priority(a));\n}\nfunction onMove(state, move, project) {\n  const fail = message => ({valid:false,message});\n  if (state.winner) return fail('本局已结束，请重新开始。');\n  if (project.board.rows !== 5 || project.board.cols !== 5) return fail('形意棋需要 5 × 5 棋盘。');\n  if (!oniInside(move.to) || move.from && !oniInside(move.from)) return fail('落点不在棋盘内。');\n  if (!oniReady(state)) {\n    if (move.action !== 'deal-cards' || move.from) return fail('请先抽取招式卡，开始对局。');\n    if (['white','black'].some(side => state.pieces.filter(p => p.side === side && p.type === 'master').length !== 1) || state.pieces.some(p => !['master','student'].includes(p.type))) return fail('双方需各有一位师父，棋子仅可使用师父和弟子。');\n    const deck = onitamaCards.map(c => c.id);\n    for (let i=deck.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }\n    const shared = deck[4], turn = oniCard(shared).stamp;\n    return {valid:true,pieces:state.pieces.map(p => ({...p})),turn,winner:null,data:{hands:{white:deck.slice(0,2),black:deck.slice(2,4)},shared},message:'抽取五张招式 · '+oniLabel(turn)+'先手'};\n  }\n  if (!oniValidDeal(state)) return fail('招式卡状态无效，请重新开始。');\n  const side = state.turn, pass = move.action?.startsWith('pass-');\n  const id = move.action?.slice(5);\n  if ((!pass && !move.action?.startsWith('card-')) || !state.data.hands[side].includes(id)) return fail('请选择己方的一张招式卡。');\n  const legal = oniMoves(state);\n  if (pass ? move.from || legal.length > 0 : !move.from || !legal.some(m => m.action === move.action && oniSame(m.from,move.from) && oniSame(m.to,move.to))) return fail(pass ? '仍有合法走法，不能停着。' : '此落点不符合所选招式，或已有己方棋子。');\n  const pieces = state.pieces.map(p => ({...p})), hands = {white:[...state.data.hands.white],black:[...state.data.hands.black]};\n  hands[side][hands[side].indexOf(id)] = state.data.shared;\n  const data = {hands,shared:id}, card = oniCard(id);\n  if (pass) return {valid:true,pieces,turn:oniOther(side),winner:null,data,message:'无合法走法 · 停着换「'+card.name+'」'};\n  const mover = pieces.find(p => oniSame(p,move.from)), target = pieces.find(p => oniSame(p,move.to));\n  if (target) pieces.splice(pieces.indexOf(target),1);\n  Object.assign(mover,move.to);\n  const capturedMaster = target?.type === 'master', enteredTemple = mover.type === 'master' && mover.col === 2 && mover.row === (side === 'white' ? 0 : 4);\n  const winner = capturedMaster || enteredTemple ? side : null;\n  const at = c => String.fromCharCode(97+c.col)+(5-c.row);\n  return {valid:true,pieces,turn:oniOther(side),winner,data,message:'「'+card.name+'」'+at(move.from)+' → '+at(move.to)+(capturedMaster ? ' · 擒师获胜' : enteredTemple ? ' · 入庙获胜' : target ? ' · 吃弟子' : '')};\n}\nfunction getLegalMoves(state) {\n  if (state.winner) return [];\n  if (!oniReady(state)) return [{action:'deal-cards',to:{row:2,col:2}}];\n  if (!oniValidDeal(state)) return [];\n  const moves = oniMoves(state);\n  return moves.length ? moves : state.data.hands[state.turn].map(id => ({action:'pass-'+id,to:{row:2,col:2}}));\n}\nfunction evaluate(state, side) {\n  if (!oniValidDeal(state)) return 0;\n  let score = 0;\n  for (const p of state.pieces) {\n    const sign = p.side === side ? 1 : -1;\n    const distance = Math.abs(p.row-(p.side === 'white' ? 0 : 4))+Math.abs(p.col-2);\n    score += sign*(p.type === 'master' ? 1000+(6-distance)*10 : 100+(p.side === 'white' ? 4-p.row : p.row)*3);\n  }\n  for (const player of [side,oniOther(side)]) {\n    const moves = oniMoves(state,player), sign = player === side ? 1 : -1;\n    score += sign*moves.length*2;\n    if (moves.some(m => state.pieces.some(p => p.side !== player && p.type === 'master' && oniSame(p,m.to)))) score += sign*(player === state.turn ? 450 : 60);\n  }\n  return score;\n}\nfunction getGameView(state) {\n  if (!oniReady(state)) return {interaction:'move',message:'一位师父，四位弟子。随机抽取五张招式，以中间待换卡的印记决定先手。',actions:[{label:'抽取招式 · 开始对局',move:{action:'deal-cards',to:{row:2,col:2}}}]};\n  if (!oniValidDeal(state)) return {message:'招式卡状态无效，请重新开始。'};\n  const current = state.turn, opponent = oniOther(current);\n  const cardView = (id,owner) => {\n    const card = oniCard(id), orientation = (owner === 'shared' ? current : owner) === 'white' ? 1 : -1;\n    return {id,label:card.name,subtitle:card.english,group:owner === 'shared' ? '待换招式 · 用过的卡将交给对手' : oniLabel(owner)+(owner === current ? '招式 · 选择一张' : '招式'),tone:owner,stamp:card.stamp,offsets:card.steps.map(([row,col]) => ({row:row*orientation||0,col:col*orientation||0})),...(!state.winner && owner === current ? {action:'card-'+id} : {})};\n  };\n  const noMoves = !state.winner && !oniMoves(state).length;\n  return {interaction:'move',message:state.winner ? oniLabel(state.winner)+'获胜。可悔棋复盘，或重新开始抽取新招式。' : noMoves ? oniLabel(current)+'没有合法走法，请选择一张卡停着换牌。' : oniLabel(current)+'：选择招式，再点击或拖动己方棋子。图中走法与棋盘方向一致；擒师或师父入敌庙即胜。',cards:[...state.data.hands[opponent].map(id => cardView(id,opponent)),cardView(state.data.shared,'shared'),...state.data.hands[current].map(id => cardView(id,current))],actions:noMoves ? state.data.hands[current].map(id => ({label:'停着换「'+oniCard(id).name+'」',move:{action:'pass-'+id,to:{row:2,col:2}}})) : []};\n}\n",
+    "winLength": 4,
+    "firstTurn": "white"
+  },
+  "ui": {
+    "accent": "#537a61",
+    "showHints": true,
+    "showHistory": true,
+    "sideLabels": {
+      "white": "红方",
+      "black": "蓝方"
+    },
+    "sideColors": {
+      "white": "#a2392d",
+      "black": "#355f99"
+    }
+  }
+}

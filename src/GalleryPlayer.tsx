@@ -65,6 +65,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
   }
   function submit(candidate: Move) {
     if (state.winner || botControlsSide(options, state.turn)) return;
+    candidate = custom.prepareMove(candidate);
     const piece = candidate.from && state.pieces.find(p => sameCell(p, candidate.from!));
     if (!candidate.promotion && project.rules.engine === 'chess' && piece?.type === 'p' && [0, 7].includes(candidate.to.row)) { setPromotion(candidate); return; }
     void move(candidate).catch(error => setError(error.message));
@@ -85,7 +86,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
         <BoardLegend project={project}/>
         <div className="gallery-play-toolbar"><button className="button" onClick={() => history()} disabled={!past.current.length}><Undo2 size={16}/>悔棋</button><button className="button" onClick={() => history(true)} disabled={!future.current.length}><Redo2 size={16}/>重做</button><button className="button" onClick={() => reset()}><RotateCcw size={16}/>重新开始</button></div>
       </div>
-      <aside className="gallery-play-info"><CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit}/><h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>
+      <aside className="gallery-play-info"><CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/><h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>
         {options ? <BotStatus options={options} thinking={thinking} paused={paused} error={error} stats={stats} onPause={() => { cancel(); setPaused(p => !p); setError(''); }} onSettings={() => setSettings(true)} onManual={() => { cancel(); setOptions(null); setError(''); }}/> : <><p>双方可在此设备轮流操作。</p><button className="button primary" onClick={() => setSettings(true)}>开始人机对弈</button>{error && <p className="error-box" role="alert">{error}</p>}</>}
         {project.ui.showHistory && <div className="gallery-moves" aria-label="试玩棋谱">{state.history.length ? state.history.map((m, i) => <div key={i}><span>{i + 1}.</span><span>{sideLabel(project, m.side)}</span><strong>{m.text}</strong></div>) : <p>落子后，棋谱会记录在这里。</p>}</div>}
       </aside>

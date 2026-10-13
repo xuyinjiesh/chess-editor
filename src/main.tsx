@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import './interaction.css';
+import './custom-cards.css';
 import './appearance.css';
 import './terrain.css';
 import './gallery.css';
