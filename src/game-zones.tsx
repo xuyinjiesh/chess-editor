@@ -85,10 +85,10 @@ export function zonePlacement(owner: GameZone['owner'], flipped: boolean): 'top'
 
 type TableProps = {
   zones?: GameZone[]; project: Project; turn: Side; flipped?: boolean;
-  disabled: boolean; selectedAction?: string; onSelect: (action: string) => void; children: ReactNode;
+  disabled: boolean; pending?: boolean; selectedAction?: string; onSelect: (action: string) => void; children: ReactNode;
 };
 
-export function GameTable({zones = [],project,turn,flipped = false,disabled,selectedAction,onSelect,children}: TableProps) {
+export function GameTable({zones = [],project,turn,flipped = false,disabled,pending = false,selectedAction,onSelect,children}: TableProps) {
   if (!zones.length) return <>{children}</>;
   const colors = {'--zone-white':project.ui.sideColors?.white || '#a2392d','--zone-black':project.ui.sideColors?.black || '#355f99','--piece-white':project.ui.sideColors?.white,'--piece-black':project.ui.sideColors?.black} as CSSProperties;
   const slot = (position: 'top' | 'bottom' | 'shared') => {
@@ -115,7 +115,7 @@ export function GameTable({zones = [],project,turn,flipped = false,disabled,sele
       }) : <p className="game-zone-empty">{zone.emptyLabel || '暂无内容'}</p>}</div>
     </section>)}</div>;
   };
-  return <div className={`game-table ${zones.some(z => z.owner === 'shared') ? 'with-shared-zone' : ''}`} style={colors} aria-label="棋盘与手牌区">
+  return <div className={`game-table ${zones.some(z => z.owner === 'shared') ? 'with-shared-zone' : ''}`} style={colors} aria-label="棋盘与手牌区" aria-busy={pending} inert={pending}>
     {slot('top')}<div className="game-table-board">{children}</div>{slot('shared')}{slot('bottom')}
   </div>;
 }

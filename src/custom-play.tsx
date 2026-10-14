@@ -83,16 +83,25 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
       .catch(error => { if (!controller.signal.aborted) setLoaded({ project, state, view: empty, error: error.message }); });
     return () => controller.abort();
   }, [project, state, enabled]);
-  const current = enabled && loaded?.project === project && loaded.state === state ? loaded : undefined;
-  // Preserve the table's shape while a new sandbox view is loading, but never
-  // submit a previous position's actions against the new board.
-  const pendingZones = enabled && loaded?.project === project ? loaded.view.zones : undefined;
-  const view: CustomView = current?.view || (pendingZones?.length ? {...empty,zones:pendingZones.map(z => ({...z,items:z.items.map(i => ({...i,disabled:true}))}))} : empty);
-  const selectable = [...(view.choices || []),...zoneSelections(view.zones || [],state.turn)];
-  const selectedAction = selection?.project === project && selection.state === state && selectable.some(c => c.action === selection.action) ? selection.action : selectable[0]?.action;
-  const controls = customMoveControls(view,selectedAction);
+  const active = enabled && project.rules.engine === 'custom';
+  const previous = active && loaded?.project === project ? loaded : undefined;
+  const current = previous?.state === state ? previous : undefined;
+  const pending = active && !current;
+  const ready = !active || !!current && !current.error;
+  // Keep the entire last view (and its selection/turn) on screen until its
+  // replacement is ready. Inert controls block input without dimming the table
+  // or collapsing the rule panel. Hints only ever use the current position.
+  const view: CustomView = current?.view || (previous ? {...previous.view,moves:[],markers:previous.view.markers?.flatMap(marker => {
+    const oldPiece = previous.state.pieces.find(p => sameCell(p,marker.cell));
+    const piece = oldPiece && state.pieces.find(p => p.id === oldPiece.id);
+    return piece ? [{...marker,cell:{row:piece.row,col:piece.col}}] : [];
+  })} : empty);
+  const viewTurn = previous?.state.turn || state.turn;
+  const selectable = [...(view.choices || []),...zoneSelections(view.zones || [],viewTurn)];
+  const selectedAction = selection?.project === project && selection.state === previous?.state && selectable.some(c => c.action === selection.action) ? selection.action : selectable[0]?.action;
+  const controls = customMoveControls(current?.view || empty,selectedAction);
   function click(cell: Cell, selected: Cell | undefined, select: (cell: Cell | undefined) => void, submit: (move: Move) => void) {
-    if (pendingZones?.length && !current) return;
+    if (!ready) return;
     if (controls.interaction === 'place') { submit({ to: cell }); return; }
     const piece = state.pieces.find(p => sameCell(p, cell));
     if (piece && !neutralPiece(project, piece) && piece.side === state.turn) {
@@ -102,16 +111,16 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
     else if (!piece || !neutralPiece(project, piece)) submit({ to: cell });
   }
   return {
-    view, error: current?.error || '', click, prepareMove: controls.prepareMove, selectedAction,
-    selectAction: (action: string) => setSelection({project,state,action}),
-    canDrag: (piece: Piece) => (!pendingZones?.length || !!current) && controls.interaction !== 'place' && !neutralPiece(project, piece),
+    view, viewTurn, pending, ready, error: current?.error || '', click, prepareMove: controls.prepareMove, selectedAction,
+    selectAction: (action: string) => { if (ready) setSelection({project,state,action}); },
+    canDrag: (piece: Piece) => ready && controls.interaction !== 'place' && !neutralPiece(project, piece),
     hints: controls.hints,
   };
 }
 
-export function CustomRulePanel({ view, error, disabled, onMove, selectedAction, onSelectAction }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void }) {
+export function CustomRulePanel({ view, error, disabled, pending = false, onMove, selectedAction, onSelectAction }: { view: CustomView; error: string; disabled: boolean; pending?: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void }) {
   if (!view.message && !view.actions.length && !view.choices?.length && !view.details?.length && !error) return null;
-  return <div className="custom-rule-panel" aria-label="当前操作">
+  return <div className="custom-rule-panel" aria-label="当前操作" aria-busy={pending} inert={pending}>
     {view.message && <p role="status">{view.message}</p>}
     {!!view.choices?.length && <div className="rule-choices" role="group" aria-label="选择操作">{view.choices.map(choice => <button key={choice.action} className="button" aria-pressed={selectedAction === choice.action} disabled={disabled} onClick={() => onSelectAction?.(choice.action)}>{choice.label}</button>)}</div>}
     {view.choices?.find(c => c.action === selectedAction)?.description && <p className="rule-choice-description">{view.choices.find(c => c.action === selectedAction)!.description}</p>}

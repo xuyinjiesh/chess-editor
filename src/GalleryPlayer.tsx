@@ -67,7 +67,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     current.current = next; setState(next); setSelected(undefined); setPromotion(null); setError(''); setStats(null);
   }
   function submit(candidate: Move) {
-    if (state.winner || botControlsSide(options, state.turn)) return;
+    if (state.winner || !custom.ready || botControlsSide(options, state.turn)) return;
     candidate = custom.prepareMove(candidate);
     const piece = candidate.from && state.pieces.find(p => sameCell(p, candidate.from!));
     if (!candidate.promotion && project.rules.engine === 'chess' && piece?.type === 'p' && [0, 7].includes(candidate.to.row)) { setPromotion(candidate); return; }
@@ -81,13 +81,13 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     if (piece?.side === state.turn) { setSelected(selected && sameCell(selected, cell) ? undefined : cell); return; }
     if (selected) submit({ from: selected, to: cell });
   }
-  const rulePanel = <CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>;
+  const rulePanel = <CustomRulePanel view={custom.view} error={custom.error} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>;
   return <section ref={section} className="gallery-player" aria-label="作品试玩">
     <div className="gallery-player-top"><button className="text-button" onClick={() => { cancel(); onClose(); }}><ArrowLeft size={16}/>返回作品介绍</button><span>独立试玩 · 编辑器草稿已保留</span></div>
     <div className="gallery-player-layout">
       <div className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
-        <GameTable zones={custom.view.zones} project={project} turn={state.turn} disabled={!!state.winner || botControlsSide(options,state.turn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction}>
-        <Board project={project} pieces={state.pieces} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={setSelected} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
+        <GameTable zones={custom.view.zones} project={project} turn={custom.viewTurn} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction}>
+        <Board project={project} pieces={state.pieces} pending={custom.pending} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={setSelected} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
         </GameTable>
         <BoardLegend project={project}/>
         {hasZones && rulePanel}
