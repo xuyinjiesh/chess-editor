@@ -42,7 +42,15 @@ describe('original gallery artifacts and controls',()=>{
   });
   it('prepares placement and movement choices and filters hints without changing game state',()=>{
     const s=initialState(wrestle),view=validateCustomView({...w.getGameView(s,wrestle),moves:w.getLegalMoves(s,wrestle)},wrestle);
-    expect(view.choices).toHaveLength(7);
+    expect(view.choices).toHaveLength(0);
+    expect(view.zones).toHaveLength(2);
+    for(const side of ['white','black']) {
+      const zone=view.zones!.find(z=>z.owner===side)!;
+      expect(zone.items).toHaveLength(7);
+      expect(zone.items.reduce((n,i)=>n+i.count!,0)).toBe(16);
+      expect(zone.items.every(i=>i.piece?.type===i.id&&i.piece.side===side)).toBe(true);
+      expect(zone.items.filter(i=>i.action)).toHaveLength(side==='white'?7:0);
+    }
     const controls=customMoveControls(view,'place-horse');
     expect(controls.interaction).toBe('place');expect(controls.hints({row:2,col:2})).toHaveLength(8);
     expect(controls.prepareMove({to:{row:0,col:0}})).toEqual(place('horse',0,0));

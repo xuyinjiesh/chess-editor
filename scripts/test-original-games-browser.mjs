@@ -10,10 +10,12 @@ const errors=[];page.on('pageerror',error=>errors.push(error.message));
 const projects=Object.fromEntries(['football','wrestle-chess'].map(id=>[id,JSON.parse(readFileSync(`public/gallery/${id}/v1/project.json`,'utf8'))]));
 const cell=(row,col)=>page.locator(`[role="grid"] [data-row="${row}"][data-col="${col}"]`);
 const choice=name=>page.getByRole('button',{name,exact:true});
+const reserve=(side,type)=>choice(`选择棋子：${side}${type}`);
+async function ready(id){await expect(id==='wrestle-chess'?page.getByLabel('棋盘与手牌区'):page.getByRole('group',{name:'选择操作'})).toBeVisible();}
 const count=page.locator('.gallery-step-count strong');
 const draft=()=>page.evaluate(()=>localStorage.getItem('qijing-project-v1'));
 async function open(id){await page.goto(url+'#/gallery/'+id+'/v1');await page.reload();await expect(choice('开始试玩')).toBeEnabled();}
-async function start(id){await open(id);await choice('开始试玩').click();await expect(page.getByRole('group',{name:'选择操作'})).toBeVisible();}
+async function start(id){await open(id);await choice('开始试玩').click();await ready(id);}
 async function play(fr,fc,tr,tc,step){await cell(fr,fc).click();await expect(cell(tr,tc).locator('.move-hint')).toBeVisible();await cell(tr,tc).click();await expect(count).toHaveText(String(step));}
 async function fixture(id,pieces,data) {
   const p=projects[id];
@@ -49,14 +51,20 @@ try {
   await page.unroute('**/gallery/football/v1/project.json');
   console.log('PASS charged marker, carried goal, shot goal, terminal controls and undo state restoration');
 
-  await start('wrestle-chess');await expect(page.locator('.rule-choices button')).toHaveCount(7);
+  await start('wrestle-chess');await expect(page.locator('.game-zone .xiangqi-piece')).toHaveCount(14);
+  await expect(page.locator('.game-zone button')).toHaveCount(7);await expect(reserve('红方','车')).toContainText('×2');
+  await expect(page.locator('[data-zone-owner="black"] .zone-item').filter({hasText:'將'})).toHaveCount(1);
+  await reserve('红方','车').click();await expect(count).toHaveText('0');
   await cell(1,1).click();await expect(page.getByRole('alert')).toContainText('第一手不能占中心');await expect(count).toHaveText('0');
-  await cell(0,0).click();await expect(count).toHaveText('1');await cell(2,2).click();await expect(count).toHaveText('2');
-  await choice('马 ×2 · 上场').click();await cell(0,1).click();await expect(count).toHaveText('3');
-  await choice('炮 ×2 · 上场').click();await cell(2,0).click();await expect(count).toHaveText('4');
-  await choice('兵 ×5 · 上场').click();await cell(0,2).click();await expect(count).toHaveText('5');
-  await choice('兵 ×5 · 上场').click();await cell(2,1).click();await expect(count).toHaveText('6');
+  await cell(0,0).click();await expect(count).toHaveText('1');await expect(reserve('蓝方','车')).toBeEnabled();await cell(2,2).click();await expect(count).toHaveText('2');
+  await expect(reserve('红方','车')).toContainText('×1');
+  await choice('移动棋子').click();await expect(choice('移动棋子')).toHaveAttribute('aria-pressed','true');
+  await reserve('红方','马').click();await cell(0,1).click();await expect(count).toHaveText('3');
+  await reserve('蓝方','炮').click();await cell(2,0).click();await expect(count).toHaveText('4');
+  await reserve('红方','兵').click();await cell(0,2).click();await expect(count).toHaveText('5');
+  await reserve('蓝方','兵').click();await cell(2,1).click();await expect(count).toHaveText('6');
   await expect(page.locator('.rule-choices button')).toHaveCount(1);await expect(choice('移动棋子')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('.game-zone button:disabled')).toHaveCount(7);
   const from=await cell(0,0).boundingBox(),to=await cell(1,0).boundingBox();
   await page.mouse.move(from.x+from.width/2,from.y+from.height/2);await page.mouse.down();await page.mouse.move(to.x+to.width/2,to.y+to.height/2,{steps:10});await page.mouse.up();
   await expect(count).toHaveText('7');await expect(cell(1,0)).toHaveAttribute('aria-label',/红方車/);
@@ -69,7 +77,7 @@ try {
 
   for(const id of ['football','wrestle-chess']) {
     await open(id);await choice('与电脑对弈').click();await page.getByLabel('电脑难度').selectOption('easy');await choice('开始新的人机对局').click();
-    await expect(page.getByRole('group',{name:'选择操作'})).toBeVisible();
+    await ready(id);
     if(id==='football') {await cell(13,6).click();await cell(11,6).click();} else await cell(0,0).click();
     await expect(count).toHaveText('2');await expect(page.locator('.gallery-turn')).toHaveText('红方回合');
     await choice('悔棋').click();await expect(count).toHaveText('0');await expect(page.locator('.gallery-turn')).toHaveText('红方回合');
@@ -80,7 +88,11 @@ try {
   console.log('PASS real sandbox AI replies, grouped undo and complete design downloads');
 
   await open('wrestle-chess');await choice('复制到编辑器').click();await expect(page.locator('.project-breadcrumb strong')).toHaveText('角斗棋 · 副本');
-  await choice('开始试玩').click();await expect(choice('车 ×2 · 上场')).toBeVisible();await cell(0,0).click();await expect(page.locator('.game-metrics > div:first-child strong')).toHaveText('1');
+  await choice('开始试玩').click();await expect(reserve('红方','车')).toBeVisible();await cell(0,0).click();await expect(page.locator('.game-metrics > div:first-child strong')).toHaveText('1');
+  await expect(page.locator('[data-zone-owner="white"] .zone-item').first()).toContainText('×1');
+  await choice('撤销').click();await expect(reserve('红方','车')).toContainText('×2');
+  await choice('重做').click();await expect(page.locator('[data-zone-owner="white"] .zone-item').first()).toContainText('×1');
+  await choice('翻转棋盘').click();await expect(page.locator('.game-table-top .game-zone')).toHaveAttribute('data-zone-owner','white');
   await open('football');await choice('复制到编辑器').click();await choice('开始试玩').click();await expect(choice('移动 / 带球')).toBeVisible();
   const editorCount=page.locator('.game-metrics > div:first-child strong');
   await cell(13,6).click();await cell(12,7).click();await expect(editorCount).toHaveText('1');
@@ -91,9 +103,12 @@ try {
   for(const id of ['football','wrestle-chess']) {
     await page.setViewportSize({width:390,height:844});await start(id);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile horizontal overflow');
-    await expect(page.getByRole('group',{name:'选择操作'})).toBeVisible();
+    await ready(id);
     if(id==='football') {await cell(13,6).click();await cell(11,6).click();await expect(count).toHaveText('1');}
-    else {await choice('士 ×2 · 上场').click();await cell(0,0).click();await expect(count).toHaveText('1');}
+    else {
+      assert.ok(await page.locator('[data-zone-owner="white"] .game-zone-items').evaluate(el=>el.scrollWidth<=el.clientWidth),'all seven reserve pieces fit on mobile');
+      await reserve('红方','士').click();await cell(0,0).click();await expect(count).toHaveText('1');
+    }
     await screenshot(id+'-mobile');
     await page.getByRole('button',{name:'切换夜间模式'}).click();await screenshot(id+'-mobile-dark');
     await page.getByRole('button',{name:'切换日间模式'}).click();

@@ -47,7 +47,7 @@ export function validateCustomView(input: unknown, project: Project): CustomView
     return {title:d.title,text:d.text};
   });
   const cards = validateRuleCards(raw.cards);
-  const zones = raw.zones === undefined ? zonesFromCards(cards) : validateGameZones(raw.zones);
+  const zones = raw.zones === undefined ? zonesFromCards(cards) : validateGameZones(raw.zones, project);
   if (zones.some(z => z.items.some(i => i.action && choiceIds.has(i.action)))) throw new Error('手牌区域与规则选项不能使用重复的操作名称。');
   return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards, zones, choices, markers, details };
 }
@@ -88,7 +88,7 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
   // submit a previous position's actions against the new board.
   const pendingZones = enabled && loaded?.project === project ? loaded.view.zones : undefined;
   const view: CustomView = current?.view || (pendingZones?.length ? {...empty,zones:pendingZones.map(z => ({...z,items:z.items.map(i => ({...i,disabled:true}))}))} : empty);
-  const selectable = [...zoneSelections(view.zones || [],state.turn),...(view.choices || [])];
+  const selectable = [...(view.choices || []),...zoneSelections(view.zones || [],state.turn)];
   const selectedAction = selection?.project === project && selection.state === state && selectable.some(c => c.action === selection.action) ? selection.action : selectable[0]?.action;
   const controls = customMoveControls(view,selectedAction);
   function click(cell: Cell, selected: Cell | undefined, select: (cell: Cell | undefined) => void, submit: (move: Move) => void) {

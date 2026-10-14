@@ -53,3 +53,14 @@ html[data-theme=dark] .game-zone .zone-item{--card-ink:inherit}
   .game-table-shared .game-zone-description{margin-bottom:5px}
 }
 @media(max-width:720px){.game-table{gap:10px}.game-zone .zone-item{flex-basis:140px}.game-zone-heading{margin-bottom:6px}}
+
+/* Piece reserves use the board's own renderer, with compact quantity badges. */
+.game-zone-items.piece-items{gap:4px;padding:3px 1px 6px}
+.game-zone .zone-item.with-piece{position:relative;display:flex;flex-direction:column;flex:1 0 42px;max-width:68px;padding:5px 1px 9px;gap:0;align-items:center;border-color:transparent;background:transparent}
+.game-zone .zone-item.with-piece>.rule-card-heading{display:none}
+.zone-item-piece{display:flex;align-items:center;justify-content:center;container-type:inline-size;width:100%;max-width:60px;aspect-ratio:1;min-height:40px}
+.game-zone .zone-item.with-piece>.rule-card-footer{position:absolute;right:0;bottom:0;min-height:0;width:auto}
+.game-zone .with-piece .zone-item-count{min-width:24px;padding:2px 4px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:10px;line-height:1.3;text-align:center}
+.game-zone .zone-item.with-piece.selected{border-color:var(--card-ink);background:color-mix(in srgb,var(--card-ink) 8%,var(--surface))}
+.game-zone .zone-item.with-piece.selected .zone-item-count{background:var(--card-ink);border-color:var(--card-ink);color:var(--surface)}
+.game-zone .zone-item.with-piece.depleted{opacity:.35}

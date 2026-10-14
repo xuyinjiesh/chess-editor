@@ -113,8 +113,11 @@ function evaluate(state,side,project) {
 }
 function getGameView(state,project) {
   const reserves = wcReserves(state,project), count = state.pieces.filter(p => p.side === state.turn).length;
-  const choices = count ? [{action:'move',label:'移动棋子',interaction:'move'}] : [];
-  if (count < 3) for (const type of WC_TYPES) if (reserves[state.turn][type] > 0) choices.push({action:'place-'+type,label:WC_NAMES[type]+' ×'+reserves[state.turn][type]+' · 上场',interaction:'place'});
-  const stock = side => (side === 'white' ? '红方' : '蓝方')+'储备：'+WC_TYPES.map(type => WC_NAMES[type]+reserves[side][type]).join(' ');
-  return {interaction:'move',actions:[],choices,message:(state.winner ? '吃将获胜。' : '当前上场 '+count+'/3 子。选择储备棋子后点击空格上场，或选择「移动棋子」操作场上棋子。'+(state.history.length === 0 ? '第一手不能占中心。' : ''))+'\n'+stock('white')+'\n'+stock('black')};
+  const choices = !state.winner && count ? [{action:'move',label:'移动棋子',interaction:'move'}] : [];
+  const zones = ['white','black'].map(side => ({
+    id:'reserve-'+side,label:(side === 'white' ? '红方' : '蓝方')+'储备',owner:side,
+    items:WC_TYPES.map(type => ({id:type,label:WC_NAMES[type],piece:{type,side},count:reserves[side][type],
+      ...(!state.winner && side === state.turn ? {action:'place-'+type,interaction:'place',disabled:count >= 3} : {})})),
+  }));
+  return {interaction:'move',actions:[],choices,zones,message:state.winner ? '吃将获胜。' : '当前上场 '+count+'/3 子。点击储备棋子，再点击空格上场；选择「移动棋子」可操作场上棋子。'+(count >= 3 ? '已达三子上限，暂不能上场。' : state.history.length === 0 ? '第一手不能占中心。' : '')};
 }

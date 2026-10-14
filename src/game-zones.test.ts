@@ -17,6 +17,16 @@ describe('portable game zones',()=>{
     expect(zones[1].items[0].count).toBe(24);
     expect(zones[2].items).toEqual([]);
   });
+  it('validates piece references and renders each side with the existing project artwork',()=>{
+    const p={...project,pieceTypes:[{id:'king',name:'将',symbol:'帥',blackSymbol:'將',shape:'xiangqi' as const}]};
+    const item={id:'king',label:'将',piece:{type:'king',side:'black'},count:1};
+    const zone={id:'reserve',label:'蓝方储备',owner:'black',items:[item]};
+    const zones=validateGameZones([zone],p);
+    const html=renderToStaticMarkup(createElement(GameTable,{zones,project:p,turn:'white',disabled:false,onSelect:()=>{},children:'board'}));
+    expect(html).toContain('xiangqi-piece letter-piece black');expect(html).toContain('將');expect(html).not.toContain('帥');
+    expect(html).toContain('数量 1');
+    for(const piece of [null,{type:'unknown',side:'white'},{type:'king',side:'shared'},{side:'white'}]) expect(()=>validateCustomView({actions:[],moves:[],zones:[{...zone,items:[{...item,piece}]}]},p)).toThrow();
+  });
   it('rejects invalid ownership, duplicate IDs and actions, excessive content and invalid counts',()=>{
     for (const zones of [null,[{...reserve,owner:'enemy'}],[reserve,reserve],Array(9).fill(reserve),[{...reserve,items:[reserve.items[0],reserve.items[0]]}],[{...reserve,items:[reserve.items[0],{...reserve.items[0],id:'another'}]}],[{...reserve,items:Array(65).fill(reserve.items[0])}]]) expect(()=>validateGameZones(zones)).toThrow();
     for (const changes of [{count:-1},{count:0.5},{count:1000001},{action:'<script>'},{interaction:'html'},{disabled:'false'},{symbol:'x'.repeat(9)},{label:1},{description:'x'.repeat(301)},{offsets:[{row:0,col:3}]},{offsets:[{row:0,col:0}]}]) expect(()=>view([{...reserve,items:[{...reserve.items[0],...changes}]}])).toThrow();

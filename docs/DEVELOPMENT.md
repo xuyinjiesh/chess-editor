@@ -92,7 +92,7 @@ zones: [
       action:'card-tiger',interaction:'move'}
   ]},
   {id:'reserve-black',label:'蓝方储备',owner:'black',items:[
-    {id:'horse',label:'马',symbol:'马',count:2,
+    {id:'horse',label:'马',piece:{type:'horse',side:'black'},count:2,
       action:'place-horse',interaction:'place',description:'选择后点击合法落点上场。'}
   ]},
   {id:'discard',label:'弃牌区',owner:'shared',emptyLabel:'暂无弃牌',items:[]}
@@ -102,6 +102,8 @@ zones: [
 区域必需字段为 `id`、`label`、`owner` 和 `items`，可带 `description`、`emptyLabel`。最多 8 个区域，每区最多 64 项、合计最多 128 项；长列表在区域内横向滚动。区域 ID 唯一，项目 ID 在所属区域内唯一，长度均不超过 64 字；区域和项目名称不超过 60 字。`owner` 是 `white` / `black` / `shared`，表示阵营归属，不随轮到谁行动而改变位置。
 
 每项必需 `id`、`label`，其余字段可选：`subtitle`（40 字）、`description`（300 字）、`symbol`（8 字）、`caption`（40 字）、`count`（0–1,000,000 的整数）、`disabled`（布尔值）。无走法图的项目可展示普通卡牌、符号和数量；`count:0` 或 `disabled:true` 禁止选择。空区域显示 `emptyLabel`，缺省为「暂无内容」。`offsets` 为 1–8 个非原点偏移，row/col 范围 -2…2；按未翻转棋盘方向提供，翻转时自动旋转示意图。`stamp` 可选 `white` / `black`，用于阵营印记。
+
+备用棋子推荐使用 `piece:{type,side}`：`type` 引用项目中已有的 `pieceTypes[].id`，`side` 为 `white` / `black`。界面直接复用棋盘上的棋子形状、双方符号和配色，以紧凑棋子和数量角标呈现，不再显示重复的文字标题；`label` 仍用于无障碍名称和悬停提示。`piece` 优先于 `offsets` / `symbol`，适用于角斗棋等从储备上场的玩法。
 
 没有 `action` 的项目仅供查看；有动作的项目只允许当前行动方或公共区选择。选择不执行走子、不消耗回合：`interaction:'move'` 为点击或拖拽移动附上所选动作名，`'place'` 为直接点击落子附上动作名并禁用拖拽。省略时沿用视图交互模式。合法落点由 `getLegalMoves` 返回，并按所选动作过滤；无动作名的通用走法仍保留。动作名需符合前述格式，在所有区域及 `choices` 中唯一，最终仍经 `onMove` 校验。
 
@@ -120,7 +122,7 @@ choices: [
 markers: [{cell:{row:11,col:7},label:'⚽蓄'}]
 ```
 
-选择按钮只改变本机操作方式，不写入棋谱。`move` 选项为点击／拖拽生成的移动附上动作名，`place` 选项为直接点击落子附上动作名，并禁用拖拽；提示仅显示对应动作的合法走法。局面改变后默认选择首项。按钮名最多 60 字，界面只接受校验后的文本和坐标；不能通过这些字段注入样式或 HTML。对局资源仍由规则在 `state.data` 中维护，例如足球棋的 `carrierId` / `charged` 和角斗棋的 `reserves`，因此下载、复制、AI 模拟与悔棋使用同一规则。
+选择按钮只改变本机操作方式，不写入棋谱。`move` 选项为点击／拖拽生成的移动附上动作名，`place` 选项为直接点击落子附上动作名，并禁用拖拽；提示仅显示对应动作的合法走法。局面改变后优先选择 `choices` 的首项，没有选项时选择首个可用区域项目。按钮名最多 60 字，界面只接受校验后的文本和坐标；不能通过这些字段注入样式或 HTML。对局资源仍由规则在 `state.data` 中维护，例如足球棋的 `carrierId` / `charged` 和角斗棋的 `reserves`，因此下载、复制、AI 模拟与悔棋使用同一规则。
 
 每次执行会创建无同源权限的 sandbox iframe，在其中创建专用 Worker。CSP 禁止网络访问，Worker 无 DOM / localStorage 权限，主页面在期限结束后移除整个沙箱。返回的棋子、回合和状态经过结构校验。浏览器沙箱不为恶意代码提供独立进程内存配额，极端资源分配仍可能造成标签页资源耗尽；不要载入未知来源的代码。
 
