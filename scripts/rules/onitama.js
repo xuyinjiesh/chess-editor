@@ -101,13 +101,19 @@ function evaluate(state, side) {
   return score;
 }
 function getGameView(state) {
-  if (!oniReady(state)) return {interaction:'move',message:'一位师父，四位弟子。随机抽取五张招式，以中间待换卡的印记决定先手。',actions:[{label:'抽取招式 · 开始对局',move:{action:'deal-cards',to:{row:2,col:2}}}]};
+  const emptyZones = [
+    {id:'hand-white',label:'红方手牌',owner:'white',items:[],emptyLabel:'等待抽取两张招式'},
+    {id:'hand-black',label:'蓝方手牌',owner:'black',items:[],emptyLabel:'等待抽取两张招式'},
+    {id:'exchange',label:'待换招式',owner:'shared',items:[],emptyLabel:'等待发牌'},
+  ];
+  if (!oniReady(state)) return {interaction:'move',zones:emptyZones,message:'一位师父，四位弟子。随机抽取五张招式，以待换卡的印记决定先手。',actions:[{label:'抽取招式 · 开始对局',move:{action:'deal-cards',to:{row:2,col:2}}}]};
   if (!oniValidDeal(state)) return {message:'招式卡状态无效，请重新开始。'};
-  const current = state.turn, opponent = oniOther(current);
+  const current = state.turn;
   const cardView = (id,owner) => {
     const card = oniCard(id), orientation = (owner === 'shared' ? current : owner) === 'white' ? 1 : -1;
-    return {id,label:card.name,subtitle:card.english,group:owner === 'shared' ? '待换招式 · 用过的卡将交给对手' : oniLabel(owner)+(owner === current ? '招式 · 选择一张' : '招式'),tone:owner,stamp:card.stamp,offsets:card.steps.map(([row,col]) => ({row:row*orientation||0,col:col*orientation||0})),...(!state.winner && owner === current ? {action:'card-'+id} : {})};
+    return {id,label:card.name,subtitle:card.english,stamp:card.stamp,offsets:card.steps.map(([row,col]) => ({row:row*orientation||0,col:col*orientation||0})),...(owner === 'shared' ? {caption:'走子后换入'} : {}),...(!state.winner && owner === current ? {action:'card-'+id,interaction:'move'} : {})};
   };
+  const zones = emptyZones.map(zone => ({...zone,...(zone.owner === 'shared' ? {description:'用过的招式将交给对手'} : {}),items:zone.owner === 'shared' ? [cardView(state.data.shared,'shared')] : state.data.hands[zone.owner].map(id => cardView(id,zone.owner))}));
   const noMoves = !state.winner && !oniMoves(state).length;
-  return {interaction:'move',message:state.winner ? oniLabel(state.winner)+'获胜。可悔棋复盘，或重新开始抽取新招式。' : noMoves ? oniLabel(current)+'没有合法走法，请选择一张卡停着换牌。' : oniLabel(current)+'：选择招式，再点击或拖动己方棋子。图中走法与棋盘方向一致；擒师或师父入敌庙即胜。',cards:[...state.data.hands[opponent].map(id => cardView(id,opponent)),cardView(state.data.shared,'shared'),...state.data.hands[current].map(id => cardView(id,current))],actions:noMoves ? state.data.hands[current].map(id => ({label:'停着换「'+oniCard(id).name+'」',move:{action:'pass-'+id,to:{row:2,col:2}}})) : []};
+  return {interaction:'move',zones,message:state.winner ? oniLabel(state.winner)+'获胜。可悔棋复盘，或重新开始抽取新招式。' : noMoves ? oniLabel(current)+'没有合法走法，请选择一张卡停着换牌。' : oniLabel(current)+'：选择招式，再点击或拖动己方棋子。圆点为起点，色块为可达位置，图示与棋盘方向一致；擒师或师父入敌庙即胜。',actions:noMoves ? state.data.hands[current].map(id => ({label:'停着换「'+oniCard(id).name+'」',move:{action:'pass-'+id,to:{row:2,col:2}}})) : []};
 }

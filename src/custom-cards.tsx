@@ -19,23 +19,3 @@ export function validateRuleCards(input: unknown): RuleCard[] {
     return {id:c.id,label:c.label,subtitle:c.subtitle,group:c.group,tone:c.tone,offsets:c.offsets.map((p: Cell) => ({row:p.row,col:p.col})),...(c.stamp ? {stamp:c.stamp} : {}),...(c.action ? {action:c.action} : {})};
   });
 }
-
-export function RuleCards({ cards, selectedAction, disabled, onSelect, flipped = false }: { cards: RuleCard[]; selectedAction?: string; disabled: boolean; onSelect?: (action: string) => void; flipped?: boolean }) {
-  return <div className="rule-cards" aria-label="招式卡">
-    {[...new Set(cards.map(c => c.group))].map(group => <div className="rule-card-group" key={group}>
-      <h3>{group}</h3>
-      <div className="rule-card-row">{cards.filter(c => c.group === group).map(card => {
-        const selected = !!card.action && card.action === selectedAction;
-        const content = <><span className="rule-card-heading"><strong>{card.label}</strong><small>{card.subtitle}</small></span>
-          <span className="rule-card-grid" aria-hidden="true">{Array.from({length:25},(_,i) => {
-            const direction = flipped ? -1 : 1, row = (Math.floor(i/5)-2)*direction, col = (i%5-2)*direction;
-            return <i key={i} className={row === 0 && col === 0 ? 'origin' : card.offsets.some(p => p.row === row && p.col === col) ? 'destination' : ''}/>;
-          })}</span>
-          <span className="rule-card-footer">{selected ? '已选择' : card.action ? '选择招式' : card.tone === 'shared' ? '下次换入' : '对手持有'}{card.stamp && <i className={`rule-card-stamp ${card.stamp}`} title={`${card.stamp === 'white' ? '红' : '蓝'}方先手印记`}/>}</span></>;
-        return card.action ? <button key={card.id} type="button" className={`rule-card ${card.tone} ${selected ? 'selected' : ''}`} aria-label={`选择招式：${card.label} ${card.subtitle}`} aria-pressed={selected} disabled={disabled || !onSelect} onClick={() => onSelect?.(card.action!)}>{content}</button>
-          : <div key={card.id} className={`rule-card ${card.tone}`} aria-label={`${card.label} ${card.subtitle}`}>{content}</div>;
-      })}</div>
-    </div>)}
-    <div className="rule-card-key"><i/> 起点 <i/> 可达位置 · 走法与棋盘方向一致</div>
-  </div>;
-}

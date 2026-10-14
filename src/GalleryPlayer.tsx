@@ -3,6 +3,7 @@ import { ArrowLeft, RotateCcw, Undo2, Redo2 } from 'lucide-react';
 import { CustomRulePanel, useCustomPlay } from './custom-play';
 import { Board, PieceIcon } from './Board';
 import { BoardLegend } from './BoardTerrain';
+import { GameTable } from './game-zones';
 import { BotSetup, BotStatus, botControlsSide, type BotOptions } from './BotControls';
 import { Modal } from './components';
 import { applyMove, hints, initialState } from './engine';
@@ -22,7 +23,8 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
   useLayoutEffect(() => { section.current?.closest('.gallery-page')?.scrollTo(0, 0); window.scrollTo(0, 0); }, []);
   current.current = state;
   const custom = useCustomPlay(project,state,true);
-  const panelAboveBoard = !!custom.view.choices?.length && !custom.view.details?.length;
+  const hasZones = !!custom.view.zones?.length;
+  const panelAboveBoard = !hasZones && !!custom.view.choices?.length && !custom.view.details?.length;
   function cancel() { revision.current++; search.current?.abort(); pending.current?.abort(); setThinking(false); }
   useEffect(() => () => { search.current?.abort(); pending.current?.abort(); }, []);
   async function move(move: Move, expected = revision.current, controller = new AbortController()) {
@@ -79,15 +81,19 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     if (piece?.side === state.turn) { setSelected(selected && sameCell(selected, cell) ? undefined : cell); return; }
     if (selected) submit({ from: selected, to: cell });
   }
+  const rulePanel = <CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>;
   return <section ref={section} className="gallery-player" aria-label="作品试玩">
     <div className="gallery-player-top"><button className="text-button" onClick={() => { cancel(); onClose(); }}><ArrowLeft size={16}/>返回作品介绍</button><span>独立试玩 · 编辑器草稿已保留</span></div>
     <div className="gallery-player-layout">
-      <div className="gallery-play-board">{panelAboveBoard ? <CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/> : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
+      <div className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
+        <GameTable zones={custom.view.zones} project={project} turn={state.turn} disabled={!!state.winner || botControlsSide(options,state.turn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction}>
         <Board project={project} pieces={state.pieces} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={setSelected} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
+        </GameTable>
         <BoardLegend project={project}/>
+        {hasZones && rulePanel}
         <div className="gallery-play-toolbar"><button className="button" onClick={() => history()} disabled={!past.current.length}><Undo2 size={16}/>悔棋</button><button className="button" onClick={() => history(true)} disabled={!future.current.length}><Redo2 size={16}/>重做</button><button className="button" onClick={() => reset()}><RotateCcw size={16}/>重新开始</button></div>
       </div>
-      <aside className="gallery-play-info">{!panelAboveBoard && <CustomRulePanel view={custom.view} error={custom.error} disabled={!!state.winner || botControlsSide(options,state.turn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>}<h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>
+      <aside className="gallery-play-info">{!panelAboveBoard && !hasZones && rulePanel}<h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>
         {options ? <BotStatus options={options} thinking={thinking} paused={paused} error={error} stats={stats} onPause={() => { cancel(); setPaused(p => !p); setError(''); }} onSettings={() => setSettings(true)} onManual={() => { cancel(); setOptions(null); setError(''); }}/> : <><p>双方可在此设备轮流操作。</p><button className="button primary" onClick={() => setSettings(true)}>开始人机对弈</button>{error && <p className="error-box" role="alert">{error}</p>}</>}
         {project.ui.showHistory && <div className="gallery-moves" aria-label="试玩棋谱">{state.history.length ? state.history.map((m, i) => <div key={i}><span>{i + 1}.</span><span>{sideLabel(project, m.side)}</span><strong>{m.text}</strong></div>) : <p>落子后，棋谱会记录在这里。</p>}</div>}
       </aside>

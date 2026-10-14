@@ -82,18 +82,32 @@ function getGameView(state,project) {
 
 `message` 只显示纯文本，`actions` 最多 16 个，走法仍经 `onMove` 校验。`action` 为 1–64 位小写字母、数字或短横线的自定义动作名，仍须提供棋盘内的 `to`。`place` 使点击直接落子，`swap` 允许选中己方两枚棋子提交交换，`move` 的落点提示由 `getLegalMoves` 提供（可包含吃己方棋子的走法）。缺省保持原有移动交互。AI 仍只使用 `getLegalMoves`，因此人工布阵交换不必加入搜索树。成功返回的 `message` 可用作棋谱文本。浏览作品介绍或编辑棋盘时不运行这些钩子。
 
-`getGameView` 还可返回最多 16 张 `cards`，用于形意棋等选择招式后移动的玩法：
+`getGameView` 可返回通用 `zones`，展示手牌、备用棋子、公共牌堆或弃牌区。编辑器试玩与作品广场共用这套布局：双方区域随阵营固定在棋盘上下，翻转棋盘时互换；公共区域位于棋盘侧边，窄屏移到棋盘下方。没有区域的作品保持原有布局。
 
 ```js
-cards: [{
-  id: 'tiger', label: '虎', subtitle: 'Tiger', group: '红方招式',
-  tone: 'white', stamp: 'black', // tone: white / black / shared；stamp 可选
-  offsets: [{row:-2,col:0},{row:1,col:0}], // 相对起点，范围 -2…2
-  action: 'card-tiger' // 可选；没有 action 的卡仅供查看
-}]
+zones: [
+  {id:'hand-white',label:'红方手牌',owner:'white',items:[
+    {id:'tiger',label:'虎',subtitle:'Tiger',stamp:'black',
+      offsets:[{row:-2,col:0},{row:1,col:0}],
+      action:'card-tiger',interaction:'move'}
+  ]},
+  {id:'reserve-black',label:'蓝方储备',owner:'black',items:[
+    {id:'horse',label:'马',symbol:'马',count:2,
+      action:'place-horse',interaction:'place',description:'选择后点击合法落点上场。'}
+  ]},
+  {id:'discard',label:'弃牌区',owner:'shared',emptyLabel:'暂无弃牌',items:[]}
+]
 ```
 
-界面选择卡片不执行走子、不消耗回合；点击或拖动棋子时把所选 `action` 附在 `Move` 上，合法落点只显示对应动作的走法。每次局面改变后重新选择当前手牌；卡牌分组与内容由沙箱提供并校验为有界纯文本，走法图由界面代码绘制。`offsets` 按未翻转棋盘的方向提供，编辑器翻转时自动旋转图示。终局仍可展示卡牌以便复盘，规则应移除终局操作，并让 `getLegalMoves` 返回空数组。
+区域必需字段为 `id`、`label`、`owner` 和 `items`，可带 `description`、`emptyLabel`。最多 8 个区域，每区最多 64 项、合计最多 128 项；长列表在区域内横向滚动。区域 ID 唯一，项目 ID 在所属区域内唯一，长度均不超过 64 字；区域和项目名称不超过 60 字。`owner` 是 `white` / `black` / `shared`，表示阵营归属，不随轮到谁行动而改变位置。
+
+每项必需 `id`、`label`，其余字段可选：`subtitle`（40 字）、`description`（300 字）、`symbol`（8 字）、`caption`（40 字）、`count`（0–1,000,000 的整数）、`disabled`（布尔值）。无走法图的项目可展示普通卡牌、符号和数量；`count:0` 或 `disabled:true` 禁止选择。空区域显示 `emptyLabel`，缺省为「暂无内容」。`offsets` 为 1–8 个非原点偏移，row/col 范围 -2…2；按未翻转棋盘方向提供，翻转时自动旋转示意图。`stamp` 可选 `white` / `black`，用于阵营印记。
+
+没有 `action` 的项目仅供查看；有动作的项目只允许当前行动方或公共区选择。选择不执行走子、不消耗回合：`interaction:'move'` 为点击或拖拽移动附上所选动作名，`'place'` 为直接点击落子附上动作名并禁用拖拽。省略时沿用视图交互模式。合法落点由 `getLegalMoves` 返回，并按所选动作过滤；无动作名的通用走法仍保留。动作名需符合前述格式，在所有区域及 `choices` 中唯一，最终仍经 `onMove` 校验。
+
+所有手牌和储备状态由规则在 `state.data` 中保存，随走子、悔棋和重做重新生成视图；选择本身仅保存在本机。沙箱视图更新期间保留区域布局并暂时禁用操作。终局保留区域供复盘，规则应移除终局操作，并让 `getLegalMoves` 返回空数组。区域内容经过有界纯数据校验，不接受 HTML 或样式。示例见 `scripts/rules/onitama.js`。
+
+旧版 `cards` 协议仍兼容：最多 16 张，按 `group` 与 `tone` 自动转换成区域，`tone` 对应 `owner`；同时返回 `zones` 时以 `zones` 为准。旧版下载的形意棋可以直接使用新布局。
 
 需要选择行动方式或储备棋子时，可返回 `choices`（最多 16 个、动作名唯一），以及按逻辑坐标附着在棋子上的 `markers`（最多 576 个、每个标签不超过 12 字）：
 

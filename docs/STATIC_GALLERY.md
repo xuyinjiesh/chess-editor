@@ -65,7 +65,7 @@ public/gallery/
 
 震棋使用参考实现的 10 × 10 棋盘，黑先白后，八方向同时击退，受阻不动、出界移除。按参考实现先判断落子是否连四，否则击退后检查双方；双方同时连四为和棋。
 
-形意棋采用基础版 5 × 5 棋盘，每方一位师父、四位弟子。进入试玩后抽取五张招式，待换卡的印记决定先手；走子后将所用卡与待换卡交换。招式图示与棋盘方向一致，编辑器翻转棋盘时也会翻转图示；无合法走法时停着换牌，擒师或师父进入敌方庙门获胜。招式选择不写入棋谱，卡牌状态随走子快照保存，支持悔棋与重做。随机性仅用于开局发牌，正式对局为确定性的完全信息搜索。
+形意棋采用基础版 5 × 5 棋盘，每方一位师父、四位弟子。进入试玩后抽取五张招式，待换卡的印记决定先手；走子后将所用卡与待换卡交换。双方手牌和待换卡使用通用 `zones` 接口，分别放在棋盘上下及公共区；其他作品也可用此接口展示普通卡牌、带数量的备用棋子、牌堆和弃牌区，见 [规则界面协议](DEVELOPMENT.md)。招式图示与棋盘方向一致，编辑器翻转棋盘时也会翻转图示；无合法走法时停着换牌，擒师或师父进入敌方庙门获胜。招式选择不写入棋谱，卡牌状态随走子快照保存，支持悔棋与重做。随机性仅用于开局发牌，正式对局为确定性的完全信息搜索。
 
 石头剪刀布棋（Intransitive / RPS2）由 webgoatguy 设计，依据视频所附 Meaf 试玩网站核对规则，资料在 `scripts/intransitive-game.mjs`。采用 9 × 9 固定阵型，双方各有 3 石、4 布、3 剪，蓝方先手。八向一步、相克吃子，攻入对角敌方基地、全歼或困毙获胜；沿用参考网站电脑对弈版连续 200 手未吃子和棋的规则。计数保存在 `data.quietPlies`，随悔棋和重做恢复。
 
@@ -100,6 +100,7 @@ npm run preview -- --base=/chess-editor/ --port 4174
 ```sh
 node scripts/test-gallery-browser.mjs
 node scripts/test-onitama-browser.mjs
+node scripts/test-game-zones-browser.mjs
 node scripts/test-original-games-browser.mjs
 node scripts/test-intransitive-browser.mjs
 ```
@@ -110,6 +111,7 @@ node scripts/test-intransitive-browser.mjs
 $env:GALLERY_TEST_URL='http://127.0.0.1:4174/chess-editor/'
 node scripts/test-gallery-browser.mjs
 node scripts/test-onitama-browser.mjs
+node scripts/test-game-zones-browser.mjs
 node scripts/test-original-games-browser.mjs
 node scripts/test-intransitive-browser.mjs
 ```

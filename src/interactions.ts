@@ -38,18 +38,25 @@ export function isTypingTarget(target:EventTarget|null){
 
 // The viewport already excludes headings/toolbars. Fit the board and both
 // player strips to its actual size, including rectangular and tall boards.
-export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=true){
+export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=true,withZones=false){
   const ref=useRef<HTMLDivElement>(null),[size,setSize]=useState(480);
   useLayoutEffect(()=>{
     const el=ref.current;if(!el||!enabled)return;
+    const stage=el.querySelector<HTMLElement>('.board-stage');
+    let scheduled=0;
     const measure=()=>{
       const {width,height}=el.getBoundingClientRect(),left=coordinates?24:0,bottom=coordinates?22:0,frame=28;
-      const fit=(height-92-bottom-frame-8)*cols/rows+left+frame;
-      setSize(Math.max(48,Math.floor(Math.min(width-8,fit))));
+      const table=withZones?el.querySelector('.game-table')?.getBoundingClientRect():undefined;
+      const board=table?el.querySelector('.board-frame')?.getBoundingClientRect():undefined;
+      const extraHeight=table&&board?table.height-board.height:0,extraWidth=table&&board?table.width-board.width:0;
+      const fit=(height-92-extraHeight-bottom-frame-8)*cols/rows+left+frame+extraWidth;
+      // Keep a usable board when a small screen needs to scroll the whole table.
+      const minimum=withZones?Math.min(width-8,300+extraWidth):48;
+      setSize(Math.max(minimum,Math.floor(Math.min(width-8,fit))));
     };
-    measure();const observer=new ResizeObserver(measure);observer.observe(el);
-    return()=>observer.disconnect();
-  },[rows,cols,coordinates,enabled]);
+    measure();const observer=new ResizeObserver(()=>{cancelAnimationFrame(scheduled);scheduled=requestAnimationFrame(measure);});observer.observe(el);if(withZones&&stage)observer.observe(stage);
+    return()=>{observer.disconnect();cancelAnimationFrame(scheduled);};
+  },[rows,cols,coordinates,enabled,withZones]);
   return {ref,size};
 }
 

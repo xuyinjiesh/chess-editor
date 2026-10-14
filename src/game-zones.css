@@ -1,0 +1,55 @@
+/* Both players stay next to their side of the board; shared zones form a rail. */
+.gallery-play-board,.board-viewport{container:play-area / inline-size}
+.game-table{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:'top' 'board' 'bottom';gap:12px;min-width:0;width:100%;align-items:center}
+.game-table.with-shared-zone{grid-template-columns:minmax(0,1fr) 126px;grid-template-areas:'top .' 'board shared' 'bottom .';column-gap:18px}
+.game-table-top{grid-area:top}.game-table-bottom{grid-area:bottom}.game-table-shared{grid-area:shared}
+.game-table-top,.game-table-bottom,.game-table-shared{display:grid;gap:10px;min-width:0}
+.game-table-board{grid-area:board;min-width:0}.game-table-board>.board-frame{width:100%;margin:0}
+.game-zone{--card-ink:var(--accent);min-width:0;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--surface)}
+.game-zone.white{--card-ink:var(--zone-white)}.game-zone.black{--card-ink:var(--zone-black)}
+.game-zone.active{border-color:color-mix(in srgb,var(--card-ink) 36%,var(--line))}
+.game-zone-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.game-zone-heading h3{font-size:11px;font-weight:600;color:var(--text-primary);overflow-wrap:anywhere}
+.game-zone-heading>span{font-size:9px;color:var(--card-ink);white-space:nowrap}
+.game-zone-description{font-size:10px;line-height:1.6;color:var(--text-secondary);margin-bottom:9px;overflow-wrap:anywhere}
+.game-zone-items{display:flex;justify-content:safe center;gap:8px;overflow-x:auto;padding:2px 1px 4px;scrollbar-width:thin;overscroll-behavior-x:contain}
+.game-zone-empty{font-size:11px;color:var(--text-secondary);padding:12px 0;min-height:40px}
+.game-zone .zone-item{--card-ink:inherit;flex:0 0 142px;padding:9px;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 9px;align-items:center;align-content:start;text-align:left;border-radius:6px}
+.game-zone .zone-item.with-diagram{grid-template-rows:1fr auto}
+.game-zone .rule-card-heading{min-width:0;align-self:center}
+.game-zone .rule-card-heading strong{font-size:20px;overflow-wrap:anywhere}
+.game-zone .rule-card-heading small{font-size:9px;overflow-wrap:anywhere}
+.game-zone .zone-item .rule-card-grid{width:54px;max-width:none;margin:0;grid-column:2;grid-row:1}
+.game-zone .zone-item .rule-card-footer{grid-column:1/-1;font-size:9px;min-height:13px;max-width:none;flex-wrap:nowrap;justify-content:space-between}
+.game-zone .rule-card-stamp.white{background:var(--zone-white)}.game-zone .rule-card-stamp.black{background:var(--zone-black)}
+.game-zone .zone-item.shared .rule-card-heading{flex:initial}
+.zone-item-symbol{font-size:27px;line-height:1.2;text-align:center;color:var(--card-ink)}
+.zone-item-description{grid-column:1/-1;font-size:10px;line-height:1.6;color:var(--text-secondary);overflow-wrap:anywhere;white-space:pre-line}
+.zone-item-count{font-size:11px;font-variant-numeric:tabular-nums;margin-left:auto;color:var(--text-primary)}
+.game-zone button.zone-item:disabled{opacity:.65}
+.game-table-shared .game-zone{padding:10px}
+.game-table-shared .game-zone-items{flex-direction:column;max-height:320px;overflow-y:auto;overflow-x:hidden}
+.game-table-shared .zone-item{flex:0 0 auto;grid-template-columns:1fr;justify-items:center;text-align:center}
+.game-table-shared .zone-item .rule-card-grid{grid-column:1;grid-row:auto;width:64px;margin:6px auto}
+.game-table-shared .rule-card-footer{width:100%}
+html[data-theme=dark] .game-zone.white{--card-ink:color-mix(in srgb,var(--zone-white) 58%,#ffffff)}
+html[data-theme=dark] .game-zone.black{--card-ink:color-mix(in srgb,var(--zone-black) 58%,#ffffff)}
+html[data-theme=dark] .game-zone .zone-item{--card-ink:inherit}
+.gallery-play-board.has-game-zones>.custom-rule-panel{font-size:11px;line-height:1.7;margin:14px 0 0;padding:10px 13px}
+.gallery-play-board.has-game-zones>.custom-rule-panel p{margin-bottom:0}
+.gallery-play-board.has-game-zones>.custom-rule-panel .rule-actions:not(:empty){margin-top:10px}
+.gallery-play-board.has-game-zones .gallery-play-toolbar{margin-top:14px}
+@media(min-width:721px){.gallery-play-board.has-game-zones .game-table{max-width:clamp(440px,calc(100dvh - 460px),640px);margin-inline:auto}.gallery-play-board.has-game-zones .gallery-turn{margin:8px 0 14px}}
+@container play-area (max-width:560px){
+  .game-table.with-shared-zone{grid-template-columns:minmax(0,1fr);grid-template-areas:'top' 'board' 'shared' 'bottom';gap:10px}
+  .game-zone{padding:9px 10px}
+  .game-table-shared .game-zone-items{flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:none}
+  .game-table-shared .game-zone{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:0 10px;align-items:center}
+  .game-table-shared .game-zone-heading{grid-column:1;grid-row:1;margin:0}
+  .game-table-shared .game-zone-description{grid-column:1;grid-row:2;align-self:start}
+  .game-table-shared .game-zone-items{grid-column:2;grid-row:1/3}
+  .game-table-shared .zone-item{flex:0 0 142px;grid-template-columns:minmax(0,1fr) auto;justify-items:stretch;text-align:left}
+  .game-table-shared .zone-item .rule-card-grid{grid-column:2;grid-row:1;width:54px;margin:0}
+  .game-table-shared .game-zone-description{margin-bottom:5px}
+}
+@media(max-width:720px){.game-table{gap:10px}.game-zone .zone-item{flex-basis:140px}.game-zone-heading{margin-bottom:6px}}

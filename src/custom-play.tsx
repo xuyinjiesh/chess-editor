@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { runSandbox } from './sandbox';
 import { sameCell, type Cell, type GameState, type Move, type Piece, type Project } from './model';
-import { RuleCards, validateRuleCards, type RuleCard } from './custom-cards';
+import { validateRuleCards, type RuleCard } from './custom-cards';
+import { validateGameZones, zonesFromCards, zoneSelections, type GameZone } from './game-zones';
 
 export type RuleChoice = { action: string; label: string; interaction: 'move' | 'place'; description?: string };
 export type RuleMarker = { cell: Cell; label: string };
-export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move; description?: string }[]; moves: Move[]; cards?: RuleCard[]; choices?: RuleChoice[]; markers?: RuleMarker[]; details?: { title: string; text: string }[] };
+export type CustomView = { message?: string; interaction?: 'move' | 'place' | 'swap'; actions: { label: string; move: Move; description?: string }[]; moves: Move[]; cards?: RuleCard[]; zones?: GameZone[]; choices?: RuleChoice[]; markers?: RuleMarker[]; details?: { title: string; text: string }[] };
 const empty: CustomView = { actions: [], moves: [] };
 export const neutralPiece = (project: Project, piece: Piece) => !!project.pieceTypes.find(t => t.id === piece.type)?.neutral;
 
@@ -45,11 +46,14 @@ export function validateCustomView(input: unknown, project: Project): CustomView
     if (!d || typeof d.title !== 'string' || !d.title.trim() || d.title.length > 60 || typeof d.text !== 'string' || d.text.length > 8000) throw new Error('规则说明无效。');
     return {title:d.title,text:d.text};
   });
-  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards: validateRuleCards(raw.cards), choices, markers, details };
+  const cards = validateRuleCards(raw.cards);
+  const zones = raw.zones === undefined ? zonesFromCards(cards) : validateGameZones(raw.zones);
+  if (zones.some(z => z.items.some(i => i.action && choiceIds.has(i.action)))) throw new Error('手牌区域与规则选项不能使用重复的操作名称。');
+  return { message: raw.message as string | undefined, interaction: raw.interaction as CustomView['interaction'], actions, moves: raw.moves.map(move), cards, zones, choices, markers, details };
 }
 
 export function customMoveControls(view: CustomView, selectedAction?: string) {
-  const choice = view.choices?.find(c => c.action === selectedAction);
+  const choice = view.choices?.find(c => c.action === selectedAction) || view.zones?.flatMap(z => z.items).find(i => i.action === selectedAction && !i.disabled && i.count !== 0);
   const interaction = choice?.interaction || view.interaction;
   const moves = view.moves.filter(m => !m.action || m.action === selectedAction);
   return {
@@ -80,11 +84,15 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
     return () => controller.abort();
   }, [project, state, enabled]);
   const current = enabled && loaded?.project === project && loaded.state === state ? loaded : undefined;
-  const view = current?.view || empty;
-  const selectable = [...(view.cards?.filter(c => c.action) || []),...(view.choices || [])];
+  // Preserve the table's shape while a new sandbox view is loading, but never
+  // submit a previous position's actions against the new board.
+  const pendingZones = enabled && loaded?.project === project ? loaded.view.zones : undefined;
+  const view: CustomView = current?.view || (pendingZones?.length ? {...empty,zones:pendingZones.map(z => ({...z,items:z.items.map(i => ({...i,disabled:true}))}))} : empty);
+  const selectable = [...zoneSelections(view.zones || [],state.turn),...(view.choices || [])];
   const selectedAction = selection?.project === project && selection.state === state && selectable.some(c => c.action === selection.action) ? selection.action : selectable[0]?.action;
   const controls = customMoveControls(view,selectedAction);
   function click(cell: Cell, selected: Cell | undefined, select: (cell: Cell | undefined) => void, submit: (move: Move) => void) {
+    if (pendingZones?.length && !current) return;
     if (controls.interaction === 'place') { submit({ to: cell }); return; }
     const piece = state.pieces.find(p => sameCell(p, cell));
     if (piece && !neutralPiece(project, piece) && piece.side === state.turn) {
@@ -96,18 +104,17 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
   return {
     view, error: current?.error || '', click, prepareMove: controls.prepareMove, selectedAction,
     selectAction: (action: string) => setSelection({project,state,action}),
-    canDrag: (piece: Piece) => controls.interaction !== 'place' && !neutralPiece(project, piece),
+    canDrag: (piece: Piece) => (!pendingZones?.length || !!current) && controls.interaction !== 'place' && !neutralPiece(project, piece),
     hints: controls.hints,
   };
 }
 
-export function CustomRulePanel({ view, error, disabled, onMove, selectedAction, onSelectAction, flipped }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void; flipped?: boolean }) {
-  if (!view.message && !view.actions.length && !view.cards?.length && !view.choices?.length && !view.details?.length && !error) return null;
+export function CustomRulePanel({ view, error, disabled, onMove, selectedAction, onSelectAction }: { view: CustomView; error: string; disabled: boolean; onMove: (move: Move) => void; selectedAction?: string; onSelectAction?: (action: string) => void }) {
+  if (!view.message && !view.actions.length && !view.choices?.length && !view.details?.length && !error) return null;
   return <div className="custom-rule-panel" aria-label="当前操作">
     {view.message && <p role="status">{view.message}</p>}
     {!!view.choices?.length && <div className="rule-choices" role="group" aria-label="选择操作">{view.choices.map(choice => <button key={choice.action} className="button" aria-pressed={selectedAction === choice.action} disabled={disabled} onClick={() => onSelectAction?.(choice.action)}>{choice.label}</button>)}</div>}
     {view.choices?.find(c => c.action === selectedAction)?.description && <p className="rule-choice-description">{view.choices.find(c => c.action === selectedAction)!.description}</p>}
-    {!!view.cards?.length && <RuleCards cards={view.cards} selectedAction={selectedAction} disabled={disabled} onSelect={onSelectAction} flipped={flipped}/>}
     <div className="rule-actions">{view.actions.map((action, i) => <button key={i} className={`button ${action.description ? 'rule-skill-action' : 'primary'}`} disabled={disabled} onClick={() => onMove(action.move)}>{action.description ? <><strong>{action.label}</strong><small>{action.description}</small></> : action.label}</button>)}</div>
     {view.details?.map((d, i) => <details className="rule-details" key={i}><summary>{d.title}</summary><p>{d.text}</p></details>)}
     {error && <p className="error-box" role="alert">规则提示加载失败：{error}</p>}

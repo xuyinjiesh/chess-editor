@@ -120,7 +120,7 @@ describe('Onitama movement, card circulation and wins',()=>{
     expect(next.pieces.some(p=>p.row===1&&p.col===2)).toBe(true);
     expect(hooks.getLegalMoves(next)).toEqual([]);
     expect(hooks.onMove(next,move([1,2],[2,1],'frog'),project).valid).toBe(false);
-    expect((hooks.getGameView(next).cards as unknown[])).toHaveLength(5);
+    expect(validateCustomView({...hooks.getGameView(next),moves:[]},project).zones?.flatMap(z=>z.items)).toHaveLength(5);
   });
   it('captures students without ending the game',()=>{
     const state=game();state.pieces.push(piece('student','black',2,2));
@@ -157,14 +157,16 @@ describe('Onitama movement, card circulation and wins',()=>{
 describe('Onitama rule interface and local AI',()=>{
   it('returns five bounded diagram cards, with selection actions only on current cards',()=>{
     const state=game(),view=validateCustomView({...hooks.getGameView(state),moves:hooks.getLegalMoves(state)},project);
-    expect(view.cards).toHaveLength(5);
-    expect(view.cards?.filter(c=>c.action).map(c=>c.id)).toEqual(['tiger','dragon']);
-    expect(view.cards?.find(c=>c.id==='frog')?.offsets).toContainEqual({row:0,col:2});
+    expect(view.zones).toHaveLength(3);
+    const cards=view.zones!.flatMap(z=>z.items);
+    expect(cards).toHaveLength(5);
+    expect(cards.filter(c=>c.action).map(c=>c.id)).toEqual(['tiger','dragon']);
+    expect(cards.find(c=>c.id==='frog')?.offsets).toContainEqual({row:0,col:2});
     expect(hooks.getGameView(state)).toEqual(hooks.getGameView(state));
     expect(state.history).toHaveLength(0);
   });
   it('rejects malformed card payloads without accepting arbitrary fields',()=>{
-    const card=validateCustomView({...hooks.getGameView(game()),moves:[]},project).cards![0];
+    const card={id:'tiger',label:'虎',subtitle:'Tiger',group:'红方招式',tone:'white',offsets:[{row:-2,col:0},{row:1,col:0}]};
     for(const cards of [Array(17).fill(card),[card,card],[{...card,label:1}],[{...card,offsets:[{row:3,col:0}]}],[{...card,offsets:[{row:0,col:0}]}],[{...card,action:'javascript:alert(1)'}],[{...card,stamp:'red'}]]) expect(()=>validateRuleCards(cards)).toThrow();
     expect(validateRuleCards([{...card,html:'<script>'}])[0]).not.toHaveProperty('html');
   });
