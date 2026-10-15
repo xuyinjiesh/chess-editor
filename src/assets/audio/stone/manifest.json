@@ -1,0 +1,33 @@
+{
+  "source": "玉石象棋 轻重落子碰撞移动吃子摩擦（雨花石拟）_爱给网_aigei_com.mp3",
+  "sourceSha256": "27853d60b005f49a22a5731b917dca8e0c45933ebe65a6e9a00a64775218c58a",
+  "format": "PCM WAV, mono, 16-bit",
+  "sampleRate": 44100,
+  "sourceDuration": 77.15,
+  "clips": [
+    {
+      "name": "pick",
+      "start": 4.275,
+      "end": 4.435,
+      "peak": 0.32,
+      "fadeOut": 0.015,
+      "duration": 0.16
+    },
+    {
+      "name": "place",
+      "start": 5.685,
+      "end": 5.905,
+      "peak": 0.56,
+      "fadeOut": 0.025,
+      "duration": 0.22
+    },
+    {
+      "name": "capture",
+      "start": 14.465,
+      "end": 14.805,
+      "peak": 0.66,
+      "fadeOut": 0.035,
+      "duration": 0.34
+    }
+  ]
+}

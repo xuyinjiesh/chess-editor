@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, RotateCcw, Undo2, Redo2 } from 'lucide-react';
 import { CustomRulePanel, useCustomPlay } from './custom-play';
 import { Board, PieceIcon } from './Board';
+import { playBoardSound, playMoveSound } from './board-audio';
+import { SoundToggle } from './SoundToggle';
 import { BoardLegend } from './BoardTerrain';
 import { GameTable } from './game-zones';
 import { BotSetup, BotStatus, botControlsSide, type BotOptions } from './BotControls';
@@ -35,6 +37,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
       if (controller.signal.aborted || expected !== revision.current) return;
       past.current.push(before); future.current = []; current.current = next; revision.current++;
       setState(next); setSelected(undefined); setError('');
+      playMoveSound(before, next);
     } catch (error) { if (!controller.signal.aborted) throw error; }
     finally { if (pending.current === controller) pending.current = null; }
   }
@@ -73,12 +76,16 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     if (!candidate.promotion && project.rules.engine === 'chess' && piece?.type === 'p' && [0, 7].includes(candidate.to.row)) { setPromotion(candidate); return; }
     void move(candidate).catch(error => setError(error.message));
   }
+  function pick(cell?: Cell) {
+    if (cell && (!selected || !sameCell(selected, cell))) playBoardSound('pick');
+    setSelected(cell);
+  }
   function click(cell: Cell) {
     if (state.winner || botControlsSide(options, state.turn)) return;
-    if (project.rules.engine === 'custom') { custom.click(cell, selected, setSelected, submit); return; }
+    if (project.rules.engine === 'custom') { custom.click(cell, selected, pick, submit); return; }
     if (['gomoku', 'reversi'].includes(project.rules.engine)) { submit({ to: cell }); return; }
     const piece = state.pieces.find(p => sameCell(p, cell));
-    if (piece?.side === state.turn) { setSelected(selected && sameCell(selected, cell) ? undefined : cell); return; }
+    if (piece?.side === state.turn) { pick(selected && sameCell(selected, cell) ? undefined : cell); return; }
     if (selected) submit({ from: selected, to: cell });
   }
   const rulePanel = <CustomRulePanel view={custom.view} error={custom.error} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>;
@@ -87,11 +94,11 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     <div className="gallery-player-layout">
       <div className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
         <GameTable zones={custom.view.zones} project={project} turn={custom.viewTurn} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction}>
-        <Board project={project} pieces={state.pieces} pending={custom.pending} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={setSelected} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
+        <Board project={project} pieces={state.pieces} pending={custom.pending} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={cell => { playBoardSound('pick'); setSelected(cell); }} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
         </GameTable>
         <BoardLegend project={project}/>
         {hasZones && rulePanel}
-        <div className="gallery-play-toolbar"><button className="button" onClick={() => history()} disabled={!past.current.length}><Undo2 size={16}/>悔棋</button><button className="button" onClick={() => history(true)} disabled={!future.current.length}><Redo2 size={16}/>重做</button><button className="button" onClick={() => reset()}><RotateCcw size={16}/>重新开始</button></div>
+        <div className="gallery-play-toolbar"><SoundToggle className="button"/><button className="button" onClick={() => history()} disabled={!past.current.length}><Undo2 size={16}/>悔棋</button><button className="button" onClick={() => history(true)} disabled={!future.current.length}><Redo2 size={16}/>重做</button><button className="button" onClick={() => reset()}><RotateCcw size={16}/>重新开始</button></div>
       </div>
       <aside className="gallery-play-info">{!panelAboveBoard && !hasZones && rulePanel}<h2>{project.name}</h2><p className="gallery-step-count">已走 <strong>{state.history.length}</strong> 步</p>
         {options ? <BotStatus options={options} thinking={thinking} paused={paused} error={error} stats={stats} onPause={() => { cancel(); setPaused(p => !p); setError(''); }} onSettings={() => setSettings(true)} onManual={() => { cancel(); setOptions(null); setError(''); }}/> : <><p>双方可在此设备轮流操作。</p><button className="button primary" onClick={() => setSettings(true)}>开始人机对弈</button>{error && <p className="error-box" role="alert">{error}</p>}</>}
