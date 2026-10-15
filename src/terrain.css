@@ -72,6 +72,9 @@
 .piece-grain { position: absolute; inset: 2%; border-radius: 50%; opacity: .42; background: repeating-linear-gradient(105deg,transparent 0 4px,#aa997411 4px 4.6px,transparent 4.6px 8px); pointer-events: none; }
 .piece-glyph { position: absolute; inset: 0; display: grid; place-content: center; grid-template-columns: repeat(var(--glyph-cols,1),1em); font: 600 var(--glyph-size,58cqi)/1 var(--font-piece); color: inherit; text-shadow: 0 .8cqi 0 var(--piece-glint); }
 .piece-letter { display: block; width: 1em; height: 1em; text-align: center; }
+.piece-artwork { position: absolute; inset: 9%; display: block; width: 82%; height: 82%; overflow: visible; filter: drop-shadow(0 .65px 0 var(--piece-glint)); }
+.illustrated-piece .piece-grain { opacity: .2; }
+.mini .piece-artwork { filter: none; }
 .token.neutral.letter-piece { width: 77%; height: auto; color: #34473b; background: linear-gradient(155deg,#d7dfd5,#a5b4a7); }
 .token.neutral.river-stone { width: 77%; height: auto; aspect-ratio: 1; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .river-stone svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 1px var(--piece-contact)); }

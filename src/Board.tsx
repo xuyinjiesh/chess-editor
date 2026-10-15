@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { boardAppearance, pieceLetterLayout } from './appearance';
+import { tokenArtwork } from './piece-art';
 import { BoardTerrain } from './BoardTerrain';
 import type { RuleMarker } from './custom-play';
 import { coord, sameCell, sideLabel, pieceSymbol, type Cell, type Piece, type PieceType, type Project } from './model';
@@ -13,6 +14,8 @@ export function PieceIcon({type,side='white',symbol,shape='chess'}:{type:string;
   if(shape==='stone')return <span className={`stone ${side}`} aria-hidden="true"/>;
   if(shape==='token'&&side==='neutral'&&type==='river-stone')return <RiverStone/>;
   if(shape==='xiangqi'||shape==='token'){
+    const artwork=tokenArtwork(type,symbol,shape);
+    if(artwork)return <span className={`token letter-piece illustrated-piece ${side}`} aria-hidden="true"><span className="piece-grain"/><svg className="piece-artwork" viewBox="0 0 64 64" focusable="false" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">{artwork.paths.map((path,i)=><path key={i} {...path}/>)}</svg></span>;
     const {chars,columns,size}=pieceLetterLayout(symbol||(shape==='xiangqi'?'棋':'✦'));
     return <span className={`${shape==='xiangqi'?'xiangqi-piece':'token'} letter-piece ${side}`} style={{'--glyph-cols':columns,'--glyph-size':`${size}cqi`} as CSSProperties} aria-hidden="true"><span className="piece-grain"/><span className="piece-glyph">{chars.map((c,i)=><span className="piece-letter" key={i}>{c}</span>)}</span></span>;
   }

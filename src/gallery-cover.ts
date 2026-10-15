@@ -1,4 +1,5 @@
 import { boardAppearance, pieceLetterLayout } from './appearance.ts';
+import { tokenArtwork } from './piece-art.ts';
 import { pieceSymbol, type Project } from './model.ts';
 import { footballPitchPath, hasFootballPitch, regionGeometry, terrainKind } from './terrain.ts';
 
@@ -56,6 +57,13 @@ export function galleryCover(project: Project): string {
       lines.push(`<text x="${x}" y="${y+1}" text-anchor="middle" dominant-baseline="central" font-family="'Segoe UI Symbol','Noto Sans Symbols 2',serif" font-size="35" fill="${white ? '#fffdf4' : '#202a23'}" stroke="#37372d" stroke-width=".5" paint-order="stroke">${escape(symbol)}</text>`);
     } else {
       const ink = neutral ? '#34473b' : project.ui.sideColors?.[piece.side] || (white ? type.shape === 'xiangqi' ? '#a2392d' : '#2f6b63' : '#344138');
+      const artwork = tokenArtwork(type.id,symbol,type.shape);
+      if (artwork) {
+        lines.push(`<g aria-label="${escape(type.name)}" color="${ink}"><circle cx="${x}" cy="${y+1.4}" r="18.48" fill="#bda578"/><circle cx="${x}" cy="${y}" r="18.48" fill="url(#piece-face)"/><circle cx="${x}" cy="${y}" r="15.5" fill="none" stroke="${ink}" stroke-opacity=".3" stroke-width=".7"/><circle cx="${x}" cy="${y}" r="14.05" fill="none" stroke="${ink}" stroke-opacity=".17" stroke-width=".5"/><g transform="translate(${x-15.1536} ${y-15.1536}) scale(.47355)" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">`);
+        for (const path of artwork.paths) lines.push(`<path d="${path.d}" fill="${path.fill}"${path.fillOpacity !== undefined ? ` fill-opacity="${path.fillOpacity}"` : ''}${path.strokeOpacity !== undefined ? ` stroke-opacity="${path.strokeOpacity}"` : ''}${path.strokeWidth !== undefined ? ` stroke-width="${path.strokeWidth}"` : ''}/>`);
+        lines.push('</g></g>');
+        continue;
+      }
       const {chars,columns,size} = pieceLetterLayout(symbol), fontSize = size/100*36.96, textRows = Math.ceil(chars.length/columns);
       lines.push(`<circle cx="${x}" cy="${y+1.4}" r="18.48" fill="#bda578"/><circle cx="${x}" cy="${y}" r="18.48" fill="${neutral ? '#c3d0c2' : 'url(#piece-face)'}"/><circle cx="${x}" cy="${y}" r="15.5" fill="none" stroke="${ink}" stroke-opacity=".3" stroke-width=".7"/><circle cx="${x}" cy="${y}" r="14.05" fill="none" stroke="${ink}" stroke-opacity=".17" stroke-width=".5"/><text aria-label="${escape(symbol)}" fill="${ink}" font-family="${font}" font-weight="600" font-size="${fontSize}" text-anchor="middle" dominant-baseline="central">`);
       chars.forEach((char,index) => {
