@@ -14,7 +14,7 @@ npm run build
 npm run preview
 ```
 
-GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库名称传入 Vite 的 `--base` 参数，例如 `/chess-editor/`；其他平台默认构建使用根路径。Pages 需要在仓库设置中选择 **GitHub Actions** 作为 Source。静态托管只发布 `dist/`，不包含可选的 WebSocket 中继。
+GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库名称传入 Vite 的 `--base` 参数，例如 `/chess-studio/`；其他平台默认构建使用根路径。Pages 需要在仓库设置中选择 **GitHub Actions** 作为 Source。静态托管只发布 `dist/`，不包含可选的 WebSocket 中继。
 
 ## 数据兼容与交互
 

@@ -32,10 +32,10 @@ describe('static gallery snapshots', () => {
     expect(filterEntries(entries, '', '不存在')).toEqual([]);
   });
   it('preserves repository subpaths and pins share links without room credentials', () => {
-    expect(galleryAsset('/chess-editor/')).toBe('/chess-editor/gallery/index.json');
-    expect(galleryAsset('/chess-editor/', entry)).toBe('/chess-editor/gallery/test-chess/v1/project.json');
+    expect(galleryAsset('/chess-studio/')).toBe('/chess-studio/gallery/index.json');
+    expect(galleryAsset('/chess-studio/', entry)).toBe('/chess-studio/gallery/test-chess/v1/project.json');
     expect(galleryAsset('/', entry, 'cover.svg')).toBe('/gallery/test-chess/v1/cover.svg');
-    expect(galleryShareUrl('https://example.com/chess-editor/?room=ABC&server=wss://private/#/gallery', entry)).toBe('https://example.com/chess-editor/#/gallery/test-chess/v1');
+    expect(galleryShareUrl('https://example.com/chess-studio/?room=ABC&server=wss://private/#/gallery', entry)).toBe('https://example.com/chess-studio/#/gallery/test-chess/v1');
     expect(parseGalleryHash(galleryHash(entry))).toEqual({ page: 'gallery', id: 'test-chess', revision: 1 });
     expect(parseGalleryHash('#/gallery/test-chess')).toEqual({ page: 'gallery', id: 'test-chess', revision: undefined });
     expect(parseGalleryHash('')).toEqual({ page: 'editor' });

@@ -30,7 +30,7 @@
 广场列表展示每个作品的最高版本；详情页可选择历史版本。分享按钮生成固定版本链接，例如：
 
 ```text
-https://你的站点/chess-editor/#/gallery/forest-chess/v1
+https://你的站点/chess-studio/#/gallery/forest-chess/v1
 ```
 
 旧版文件会保留，导入命令拒绝覆盖已有版本。要修复已发布版本，请增加版本号。访问没有版本后缀的 `#/gallery/forest-chess` 会打开清单中的最新版本。
@@ -90,14 +90,14 @@ public/gallery/
 
 广场使用 hash 路由，静态服务器无需配置路径重写。加载资源时遵循 Vite 的 `base`，可部署在根路径或 GitHub Pages 的仓库子路径。现有 Pages 工作流会自动指定仓库路径。
 
-若要本地模拟 `/chess-editor/` 子路径：
+若要本地模拟 `/chess-studio/` 子路径：
 
 ```sh
-npm run build -- --base=/chess-editor/
-npm run preview -- --base=/chess-editor/ --port 4174
+npm run build -- --base=/chess-studio/
+npm run preview -- --base=/chess-studio/ --port 4174
 ```
 
-访问 `http://localhost:4174/chess-editor/#/gallery`。浏览器集成测试可对生产预览运行：
+访问 `http://localhost:4174/chess-studio/#/gallery`。浏览器集成测试可对生产预览运行：
 
 ```sh
 node scripts/test-gallery-browser.mjs
@@ -111,7 +111,7 @@ node scripts/test-intransitive-browser.mjs
 默认测试地址是 `http://127.0.0.1:4173/`。使用子路径预览时设置 `GALLERY_TEST_URL`，例如 PowerShell：
 
 ```powershell
-$env:GALLERY_TEST_URL='http://127.0.0.1:4174/chess-editor/'
+$env:GALLERY_TEST_URL='http://127.0.0.1:4174/chess-studio/'
 node scripts/test-gallery-browser.mjs
 node scripts/test-onitama-browser.mjs
 node scripts/test-game-zones-browser.mjs
