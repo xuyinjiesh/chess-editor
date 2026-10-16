@@ -153,11 +153,11 @@ describe('mini eternal chess',()=>{
   });
 });
 describe('shock chess',()=>{
-  it('uses an empty 10 by 10 board with black first and rejects occupied cells',()=>{
-    expect(shock.board).toMatchObject({rows:10,cols:10}); expect(initialState(shock).turn).toBe('black'); expect(shock.pieces).toEqual([]);
+  it('uses an empty 8 by 8 cell-centered board with black first and rejects occupied cells',()=>{
+    expect(shock.board).toMatchObject({rows:8,cols:8,pattern:'cells'}); expect(initialState(shock).turn).toBe('black'); expect(shock.pieces).toEqual([]);
     const game=play(shock,initialState(shock),{to:{row:4,col:4}}); expect(game.turn).toBe('white');
     expect(s.onMove(game,{to:{row:4,col:4}},shock).valid).toBe(false); expect(s.onMove(game,move(4,4,5,5),shock).valid).toBe(false);
-    expect(s.onMove(game,{to:{row:10,col:0}},shock).valid).toBe(false);
+    for(const to of [{row:8,col:0},{row:0,col:8}]) expect(s.onMove(game,{to},shock).valid).toBe(false);
   });
   it('pushes all eight adjacent cells of either side simultaneously',()=>{
     const dirs=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
@@ -204,7 +204,7 @@ describe('shock chess',()=>{
     const game=state([0,1,3].map(col=>piece('stone','black',4,col)),'black');
     const adapter=customAdapter(shock); let count=0;
     for await(const candidate of adapter.moves(game,()=>{})) {expect(s.onMove(game,candidate,shock).valid).toBe(true); count++;}
-    expect(count).toBe(97);
+    expect(count).toBe(61);
     const result=await searchGame(adapter,game,{timeMs:1500,maxDepth:2,maxNodes:20000}); expect(result.move).not.toBeNull(); expect(play(shock,game,result.move!).winner).toBe('black');
   });
 });

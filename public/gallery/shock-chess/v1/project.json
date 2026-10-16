@@ -4,9 +4,9 @@
   "name": "震棋",
   "description": "黑先白后，落子击退周围八格棋子，连四获胜。参考 chess-room 及日出333视频：https://www.bilibili.com/video/BV1ch4y1c7Kn/。原规则设计者与授权状态尚未核实。",
   "board": {
-    "rows": 10,
-    "cols": 10,
-    "pattern": "grid",
+    "rows": 8,
+    "cols": 8,
+    "pattern": "cells",
     "light": "#e8d7b6",
     "dark": "#dcc6a0",
     "coordinates": true,

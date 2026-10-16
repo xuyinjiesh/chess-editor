@@ -61,9 +61,10 @@ try {
 
   await open('shock-chess'); await expect(page.getByRole('link',{name:'震棋 · 日出333的视频介绍'})).toHaveAttribute('href','https://www.bilibili.com/video/BV1ch4y1c7Kn/');
   await page.getByRole('button',{name:'开始试玩',exact:true}).click(); await expect(panel).toContainText('周围八格');
+  await expect(page.locator('[role="grid"].pattern-cells [role="gridcell"]')).toHaveCount(64);
   await cell(4,4).click(); await expect(count).toHaveText('1'); await expect(panel).toBeVisible();
-  await cell(4,5).click(); await expect(count).toHaveText('2'); await expect(cell(4,3)).toHaveAttribute('aria-label','d6 黑方棋石');
-  await cell(4,4).click(); await expect(count).toHaveText('3'); await expect(cell(4,2)).toHaveAttribute('aria-label','c6 黑方棋石'); await expect(cell(4,6)).toHaveAttribute('aria-label','g6 白方棋石');
+  await cell(4,5).click(); await expect(count).toHaveText('2'); await expect(cell(4,3)).toHaveAttribute('aria-label','d4 黑方棋石');
+  await cell(4,4).click(); await expect(count).toHaveText('3'); await expect(cell(4,2)).toHaveAttribute('aria-label','c4 黑方棋石'); await expect(cell(4,6)).toHaveAttribute('aria-label','g4 白方棋石');
   await page.getByRole('button',{name:'悔棋',exact:true}).click(); await expect(count).toHaveText('2'); await page.getByRole('button',{name:'重做',exact:true}).click(); await expect(count).toHaveText('3');
   await screenshot('shock-play'); await page.getByRole('button',{name:'返回作品介绍'}).click();
   await page.getByRole('button',{name:'与电脑对弈'}).click(); await page.getByLabel('电脑难度').selectOption('easy'); await page.getByRole('button',{name:'开始新的人机对局'}).click();
@@ -83,7 +84,7 @@ try {
   await expect.poll(async()=>JSON.parse(await draft()).name).toBe('震棋 · 副本'); const copied=JSON.parse(await draft()); assert.notEqual(copied.id,'shock-chess');
   const library=await page.evaluate(()=>JSON.parse(localStorage.getItem('qijing-library-v1'))); assert.deepEqual(library.find(p=>p.id===JSON.parse(original).id),JSON.parse(original));
   await page.getByRole('button',{name:'开始试玩',exact:true}).click(); await expect(panel).toBeVisible(); await cell(4,4).click(); await cell(4,5).click();
-  await expect(cell(4,3)).toHaveAttribute('aria-label','d6 黑方棋石'); await page.getByRole('button',{name:'返回编辑',exact:true}).click();
+  await expect(cell(4,3)).toHaveAttribute('aria-label','d4 黑方棋石'); await page.getByRole('button',{name:'返回编辑',exact:true}).click();
   await page.getByRole('button',{name:'准备发布作品'}).click(); await page.getByLabel('作品标识',{exact:false}).fill('my-first-game'); await page.getByLabel('作者署名').fill('本地测试作者');
   await page.getByLabel('玩法说明').fill('黑先白后，落子击退周围八格棋子，连四获胜。');
   const releaseDownload=page.waitForEvent('download'); await page.getByRole('button',{name:'导出发布包'}).click(); const releaseFile=await releaseDownload;
