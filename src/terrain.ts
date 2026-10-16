@@ -1,4 +1,5 @@
 import type { Cell, Project, Region } from './model.ts';
+import { hexRegionGeometry } from './board-geometry.ts';
 
 // Opt-in by region tag so field markings also survive copying and importing.
 export const hasFootballPitch = (project: Project) => project.board.rows === 23 && project.board.cols === 15 && project.regions.some(r => r.tag === 'football-pitch');
@@ -6,7 +7,8 @@ export const footballPitchPath = 'M0 100H500M1000 100H1500V2200H1000M500 2200H0V
 
 // Regions use whole logical cells, while pieces sit on their centers. Shared
 // edges are omitted so a painted area has one perimeter, including its holes.
-export function regionGeometry(cells: Cell[], rows: number, cols: number, flipped = false) {
+export function regionGeometry(cells: Cell[], rows: number, cols: number, flipped = false, pattern: Project['board']['pattern'] = 'cells') {
+  if (pattern === 'hex') return hexRegionGeometry(cells, { rows, cols, pattern }, flipped);
   const occupied = new Map<string, Cell>();
   for (const cell of cells) {
     if (cell.row < 0 || cell.row >= rows || cell.col < 0 || cell.col >= cols) continue;

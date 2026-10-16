@@ -1,3 +1,4 @@
+import { createBoardTopology } from './board-geometry';
 import { validateProject, type GameState, type Move, type Project, type RuleResult } from './model';
 
 // Opaque-origin iframe -> dedicated worker. Each search reuses one sandbox for
@@ -31,8 +32,8 @@ export function runSandbox<T>(workerCode: string, payload: unknown, timeoutMs: n
 export async function runRule(code: string, state: GameState, move: Move, project: Project, signal?: AbortSignal): Promise<RuleResult> {
   const workerCode = `onmessage = async (event) => { try {
     const {code, state, move, project} = event.data;
-    const execute = new Function('state', 'move', 'project', code + '\\n;if (typeof onMove !== "function") throw new Error("请定义 onMove(state, move, project) 函数"); return onMove(state, move, project);');
-    const result = await execute(state, move, project); postMessage({result});
+    const execute = new Function('state', 'move', 'project', 'boardTopology', code + '\\n;if (typeof onMove !== "function") throw new Error("请定义 onMove(state, move, project) 函数"); return onMove(state, move, project);');
+    const result = await execute(state, move, project, (${createBoardTopology.toString()})(project.board)); postMessage({result});
   } catch (error) {postMessage({error:String(error.message || error)})} };`;
   const r = await runSandbox<RuleResult>(workerCode, { code, state, move, project }, 2000, signal);
   if (!r || typeof r.valid !== 'boolean') throw new Error('规则需要返回 { valid: boolean, ... }。');

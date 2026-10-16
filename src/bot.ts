@@ -1,5 +1,6 @@
 import type { GameState, Project } from './model';
 import { BOT_LIMITS, searchGame, type BotDifficulty, type SearchResult } from './bot-search';
+import { createBoardTopology } from './board-geometry';
 import { customAdapter } from './bot-custom';
 import { runSandbox } from './sandbox';
 
@@ -17,7 +18,7 @@ export async function chooseBotMove(project: Project, state: GameState, difficul
   if (project.rules.engine === 'custom') {
     const workerCode = `onmessage = async event => { try {
       const {project, state, limits} = event.data;
-      const result = await (${searchGame.toString()})((${customAdapter.toString()})(project), state, limits);
+      const result = await (${searchGame.toString()})((${customAdapter.toString()})(project, (${createBoardTopology.toString()})(project.board)), state, limits);
       postMessage({result});
     } catch(error) { postMessage({error: String(error.message || error)}); } };`;
     return validateSearchResult(await runSandbox<unknown>(workerCode, { project, state, limits }, limits.timeMs + 2000, signal), project);

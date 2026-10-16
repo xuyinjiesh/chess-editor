@@ -1,3 +1,4 @@
+import { boardMetrics, cellCenter, cellVertices } from './board-geometry.ts';
 import { boardAppearance, pieceLetterLayout } from './appearance.ts';
 import { tokenArtwork } from './piece-art.ts';
 import { pieceSymbol, type Project } from './model.ts';
@@ -11,28 +12,29 @@ const rock = 'M20 18Q41 10 66 14L83 30Q89 46 83 67L70 83Q49 89 30 82L14 64Q9 43 
 // exporting and browsing a cover never executes custom rule code.
 export function galleryCover(project: Project): string {
   const { rows, cols, pattern, light, dark } = project.board, unit = 44, margin = 26;
-  const width = cols * unit + margin * 2, height = rows * unit + margin * 2, theme = boardAppearance(project.board);
+  const metrics = boardMetrics(project.board), scale = unit / 100;
+  const width = metrics.width * scale + margin * 2, height = metrics.height * scale + margin * 2, theme = boardAppearance(project.board);
   const river = theme.id === 'midnight' || theme.id === 'nebula' || theme.text === '#b9c4d2' ? '#567f79' : '#9bbdb1';
   const lines: string[] = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img"><title>${escape(project.name)}</title>`, `<defs><linearGradient id="piece-face" x2=".7" y2="1"><stop stop-color="#fffbee"/><stop offset="1" stop-color="#e6d7b9"/></linearGradient><linearGradient id="rock-face" x2=".8" y2="1"><stop stop-color="#bac9bb"/><stop offset="1" stop-color="#91a491"/></linearGradient><pattern id="river-waves" width="180" height="36" patternUnits="userSpaceOnUse"><path d="M-40 18Q-10 9 20 18T80 18T140 18T200 18" fill="none" stroke="${river}" stroke-width="1.15"/></pattern><pattern id="zone-hatch" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M-6 6L6-6M0 24L24 0M18 30L30 18" fill="none" stroke="${theme.text}" stroke-width="1.2"/></pattern></defs>`, `<rect width="${width}" height="${height}" rx="12" fill="${theme.frameA}"/><rect x="6" y="6" width="${width-12}" height="${height-12}" rx="7" fill="none" stroke="${theme.frameB}" stroke-opacity=".6"/>`, `<g transform="translate(${margin} ${margin})">`];
   for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
-    const fill = pattern === 'checker' && (row + col) % 2 ? dark : light;
+    const fill = ['checker','hex'].includes(pattern) && (row + col) % 2 ? dark : light;
     if (pattern === 'hex') {
-      const x = col * unit, y = row * unit;
-      lines.push(`<polygon points="${x + 11},${y + 2} ${x + 33},${y + 2} ${x + 43},${y + 22} ${x + 33},${y + 42} ${x + 11},${y + 42} ${x + 1},${y + 22}" fill="${fill}" stroke="${theme.text}" stroke-opacity=".2"/>`);
+      const points = cellVertices(project.board,{row,col}).map(p=>`${p.x*scale},${p.y*scale}`).join(' ');
+      lines.push(`<polygon points="${points}" fill="${fill}" stroke="${theme.text}" stroke-opacity=".2"/>`);
     } else lines.push(`<rect x="${col * unit}" y="${row * unit}" width="${unit}" height="${unit}" fill="${fill}"/>`);
   }
   // Match the live board's continuous terrain, behind the intersection grid.
   lines.push('<g transform="scale(.44)">');
   if (pattern === 'xiangqi') lines.push(`<rect x="50" y="450" width="800" height="100" fill="${river}" fill-opacity=".45"/><rect x="50" y="450" width="800" height="100" fill="url(#river-waves)" opacity=".4"/><g fill="${theme.text}" fill-opacity=".065"><rect x="350" y="50" width="200" height="200"/><rect x="350" y="750" width="200" height="200"/></g>`);
-  for (const region of ['grid', 'cells', 'xiangqi'].includes(pattern) ? project.regions : []) {
-    const { fill, outline } = regionGeometry(region.cells, rows, cols), kind = terrainKind(region);
+  for (const region of ['grid', 'cells', 'xiangqi', 'hex'].includes(pattern) ? project.regions : []) {
+    const { fill, outline } = regionGeometry(region.cells, rows, cols, false, pattern), kind = terrainKind(region);
     lines.push(`<path d="${fill}" fill="${region.color}" fill-opacity="${kind === 'river' ? '.38' : '.14'}"/>`);
     if (kind !== 'region') lines.push(`<path d="${fill}" fill="url(#${kind === 'river' ? 'river-waves' : 'zone-hatch'})" opacity="${kind === 'river' ? '.4' : '.16'}"/>`);
     lines.push(`<path d="${outline}" fill="none" stroke="${region.color}" stroke-opacity=".6" stroke-width=".65" vector-effect="non-scaling-stroke"/>`);
   }
   if (hasFootballPitch(project)) lines.push(`<path d="${footballPitchPath}" fill="none" stroke="#f3f6df" stroke-width="6"/>`);
   lines.push('</g>');
-  if (['checker', 'hex'].includes(pattern)) for (const region of project.regions) for (const c of region.cells) lines.push(`<rect x="${c.col * unit + 2}" y="${c.row * unit + 2}" width="40" height="40" rx="5" fill="${region.color}" fill-opacity=".3"/>`);
+  if (pattern === 'checker') for (const region of project.regions) for (const c of region.cells) lines.push(`<rect x="${c.col * unit + 2}" y="${c.row * unit + 2}" width="40" height="40" rx="5" fill="${region.color}" fill-opacity=".3"/>`);
   if (['grid', 'xiangqi', 'cells'].includes(pattern)) {
     const cells = pattern === 'cells', start = cells ? 0 : unit / 2, endX = cols * unit - start, endY = rows * unit - start;
     lines.push(`<g stroke="${theme.text}" stroke-opacity=".45" fill="none">`);
@@ -47,7 +49,8 @@ export function galleryCover(project: Project): string {
   }
   for (const piece of project.pieces) {
     const type = project.pieceTypes.find(p => p.id === piece.type)!;
-    const x = piece.col * unit + unit / 2, y = piece.row * unit + unit / 2, white = piece.side === 'white', neutral = type.neutral;
+    const center = cellCenter(project.board,piece);
+    const x = center.x * scale, y = center.y * scale, white = piece.side === 'white', neutral = type.neutral;
     const symbol = pieceSymbol(type,piece.side);
     if (neutral && type.id === 'river-stone' && type.shape === 'token') {
       lines.push(`<g transform="translate(${x-16.94} ${y-16.94}) scale(.3388)"><path d="${rock}" transform="translate(0 3)" fill="#748977"/><path d="${rock}" fill="url(#rock-face)" stroke="#748977"/><path d="M50 38L61 50L50 62L39 50Z" fill="none" stroke="#4e6656" stroke-width="3" stroke-linejoin="round"/></g>`);

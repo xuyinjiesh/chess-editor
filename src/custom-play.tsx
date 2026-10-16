@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createBoardTopology } from './board-geometry';
 import { runSandbox } from './sandbox';
 import { sameCell, type Cell, type GameState, type Move, type Piece, type Project } from './model';
 import { validateRuleCards, type RuleCard } from './custom-cards';
@@ -71,7 +72,7 @@ export function useCustomPlay(project: Project, state: GameState, enabled: boole
     const controller = new AbortController();
     const code = `onmessage = async event => { try {
       const {project,state} = event.data;
-      const hooks = new Function(project.rules.code + '\\n;return {view:typeof getGameView === "function" ? getGameView : null,moves:typeof getLegalMoves === "function" ? getLegalMoves : null};')();
+      const hooks = new Function('boardTopology', project.rules.code + '\\n;return {view:typeof getGameView === "function" ? getGameView : null,moves:typeof getLegalMoves === "function" ? getLegalMoves : null};')((${createBoardTopology.toString()})(project.board));
       const view = hooks.view ? await hooks.view(structuredClone(state),structuredClone(project)) : {};
       const moves = hooks.moves ? await hooks.moves(structuredClone(state),structuredClone(project)) : [];
       postMessage({result:{...view,actions:view.actions || [],moves}});

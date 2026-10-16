@@ -1,17 +1,18 @@
 import type { Project, Piece } from './model';
 export const CUSTOM_CODE = `// 可使用 state、move、project，坐标从 0 开始。
 // 返回 { valid, pieces, turn, winner?, data?, message? }。
-// 此示例：每个棋子可以走到相邻格，吃掉对方棋子。
+// 此示例：方格八邻接、蜂巢六邻接，吃掉对方棋子。
+// boardTopology 在走子、合法提示和电脑搜索沙箱中均可用。
 function onMove(state, move, project) {
   const at = (p, c) => c && p.row === c.row && p.col === c.col;
   const piece = state.pieces.find(p => at(p, move.from));
   if (!piece || piece.side !== state.turn)
     return { valid: false, message: '请选择己方棋子' };
+  if (!boardTopology.contains(move.to)) return { valid: false, message: '落点不在棋盘内' };
   const target = state.pieces.find(p => at(p, move.to));
   if (target?.side === state.turn)
     return { valid: false, message: '目标格已有己方棋子' };
-  const distance = Math.max(Math.abs(piece.row - move.to.row),
-                           Math.abs(piece.col - move.to.col));
+  const distance = boardTopology.distance(piece, move.to);
   if (distance !== 1)
     return { valid: false, message: '只能移动一格' };
   const blocked = project.regions.some(r => r.tag === 'blocked'
@@ -29,9 +30,7 @@ function getLegalMoves(state, project) {
   const moves = [];
   for (const piece of state.pieces) {
     if (piece.side !== state.turn) continue;
-    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-      const to = { row: piece.row + dr, col: piece.col + dc };
-      if (to.row < 0 || to.col < 0 || to.row >= project.board.rows || to.col >= project.board.cols) continue;
+    for (const to of boardTopology.neighbors(piece)) {
       const move = { from: { row: piece.row, col: piece.col }, to };
       if (onMove(structuredClone(state), move, project).valid) moves.push(move);
     }

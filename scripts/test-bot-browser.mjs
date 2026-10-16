@@ -77,8 +77,17 @@ try {
   await expect(page.locator('.bot-status [role="alert"]')).toContainText('无效走法');
   await expect(page.locator('.bot-status')).toContainText('电脑已暂停');
   await page.getByRole('button', { name: '改为双人操作', exact: true }).click();
+  // Invalid legal moves also invalidate the shared rule view. Repair the hook
+  // before resuming; changing opponents must not bypass that existing gate.
+  await expect(page.locator('.custom-rule-panel [role="alert"]')).toContainText('无效走法');
+  await cell(7, 3).click(); await cell(6, 3).click(); await expect(count).toHaveText('0');
+  await edit(); await page.getByRole('button', { name: '规则', exact: true }).click();
+  await page.getByRole('button', { name: '打开规则代码编辑器' }).click();
+  await editor.fill(originalCode); await page.getByRole('button', { name: '应用规则', exact: true }).click();
+  await page.getByRole('button', { name: '开始试玩', exact: true }).click();
+  await expect(page.locator('[role="grid"]')).not.toHaveAttribute('aria-busy','true');
   await cell(7, 3).click(); await cell(6, 3).click(); await expect(count).toHaveText('1');
-  assert.equal(await page.locator('iframe').count(), 0);
+  await expect(page.locator('iframe')).toHaveCount(0);
   console.log('PASS legacy rules, infinite loop timeout, isolation, invalid adapter and manual recovery');
 
   await template('井字棋'); await setup({ mode: 'watch', difficulty: 'hard' });

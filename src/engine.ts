@@ -1,6 +1,7 @@
 import { Chess, type Square } from 'chess.js';
 import { coord, otherSide, sameCell, type GameState, type Move, type Piece, type Project, type Side } from './model';
 import { runRule } from './sandbox';
+import { createBoardTopology } from './board-geometry';
 import { applyXiangqiMove, validateXiangqiSetup, xiangqiInCheck, xiangqiLegalMoves } from './xiangqi';
 export function toFen(project: Project, pieces: Piece[], turn: Side): string {
   const ranks = Array.from({length:8},(_,row)=>{
@@ -23,6 +24,7 @@ export function toFen(project: Project, pieces: Piece[], turn: Side): string {
   return `${ranks.join('/')} ${turn==='white'?'w':'b'} ${rights||'-'} - 0 1`;
 }
 export function initialState(project: Project): GameState {
+  if(project.board.pattern==='hex'&&['chess','xiangqi'].includes(project.rules.engine))throw new Error('六边形棋盘请使用连珠、黑白棋或自定义规则。');
   const state:GameState={pieces:structuredClone(project.pieces),turn:project.rules.firstTurn,winner:null,history:[],data:{}};
   if(project.rules.engine==='chess') {state.fen=toFen(project,state.pieces,state.turn); const chess=new Chess(state.fen);state.fenHistory=[state.fen];state.winner=chess.isCheckmate()?otherSide(state.turn):chess.isDraw()?'draw':null;}
   if(project.rules.engine==='xiangqi') {validateXiangqiSetup(project);state.data.check=xiangqiInCheck(state.pieces,state.turn);if(!xiangqiLegalMoves(state.pieces,state.turn).length)state.winner=otherSide(state.turn);}
@@ -30,24 +32,26 @@ export function initialState(project: Project): GameState {
   return state;
 }
 const inside=(project:Project,c:{row:number;col:number})=>Number.isInteger(c.row)&&Number.isInteger(c.col)&&c.row>=0&&c.col>=0&&c.row<project.board.rows&&c.col<project.board.cols;
-export function reversiFlips(pieces:Piece[],row:number,col:number,side:Side):Piece[]{
+export function reversiFlips(pieces:Piece[],row:number,col:number,side:Side,board:Pick<Project['board'],'rows'|'cols'|'pattern'>={rows:24,cols:24,pattern:'cells'}):Piece[]{
   if(pieces.some(p=>p.row===row&&p.col===col)) return [];
   const all:Piece[]=[];
-  for(const [dr,dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
-    let r=row+dr,c=col+dc;const line:Piece[]=[];
-    for(let i=0;i<24;i++) {const p=pieces.find(p=>p.row===r&&p.col===c);if(!p)break;if(p.side===side){if(line.length)all.push(...line);break;}line.push(p);r+=dr;c+=dc;}
+  const topology=createBoardTopology(board);
+  for(let direction=0;direction<topology.directionCount;direction++){
+    const line:Piece[]=[];
+    for(const cell of topology.ray({row,col},direction)) {const p=pieces.find(p=>sameCell(p,cell));if(!p)break;if(p.side===side){if(line.length)all.push(...line);break;}line.push(p);}
   }return all;
 }
-function reversiHasMove(project:Project,pieces:Piece[],side:Side){for(let r=0;r<project.board.rows;r++)for(let c=0;c<project.board.cols;c++)if(reversiFlips(pieces,r,c,side).length)return true;return false;}
+function reversiHasMove(project:Project,pieces:Piece[],side:Side){for(let r=0;r<project.board.rows;r++)for(let c=0;c<project.board.cols;c++)if(reversiFlips(pieces,r,c,side,project.board).length)return true;return false;}
 const stoneWinner=(pieces:Piece[]):Side|'draw'=>{const w=pieces.filter(p=>p.side==='white').length,b=pieces.length-w;return w===b?'draw':w>b?'white':'black';};
 export function hints(project:Project,state:GameState,from?:{row:number;col:number}) {
   if(state.winner) return [];
   if(project.rules.engine==='xiangqi'&&from)return xiangqiLegalMoves(state.pieces,state.turn,from).map(m=>m.to);
   if(project.rules.engine==='chess'&&from&&state.fen){try {return new Chess(state.fen).moves({square:coord(from,8) as Square,verbose:true}).map(m=>({row:8-Number(m.to[1]),col:m.to.charCodeAt(0)-97}));}catch{return [];}}
-  if(project.rules.engine==='reversi'){const list=[];for(let row=0;row<project.board.rows;row++)for(let col=0;col<project.board.cols;col++)if(reversiFlips(state.pieces,row,col,state.turn).length)list.push({row,col});return list;}
+  if(project.rules.engine==='reversi'){const list=[];for(let row=0;row<project.board.rows;row++)for(let col=0;col<project.board.cols;col++)if(reversiFlips(state.pieces,row,col,state.turn,project.board).length)list.push({row,col});return list;}
   return [];
 }
 export async function applyMove(project:Project,state:GameState,move:Move,signal?:AbortSignal):Promise<GameState>{
+  if(project.board.pattern==='hex'&&['chess','xiangqi'].includes(project.rules.engine))throw new Error('六边形棋盘请使用连珠、黑白棋或自定义规则。');
   if(state.winner)throw new Error('这局已经结束，可以重新开始。');
   if(!move||!move.to||!inside(project,move.to)||(move.from&&!inside(project,move.from)))throw new Error('落点不在棋盘内。');
   if (move.action !== undefined && (project.rules.engine !== 'custom' || typeof move.action !== 'string' || !/^[a-z0-9-]{1,64}$/.test(move.action))) throw new Error('无效的规则操作。');
@@ -81,15 +85,16 @@ export async function applyMove(project:Project,state:GameState,move:Move,signal
   }else if(project.rules.engine==='gomoku'){
     if(state.pieces.some(p=>sameCell(p,move.to)))throw new Error('这个位置已有棋子。');
     next.pieces.push({id:crypto.randomUUID(),type:project.pieceTypes[0].id,side:state.turn,...move.to});
-    for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+    const topology=createBoardTopology(project.board);
+    for(let direction=0;direction<topology.axisCount;direction++){
       let count=1;
-      for(const sign of [-1,1])for(let n=1;n<24;n++){const r=move.to.row+dr*n*sign,c=move.to.col+dc*n*sign;if(!next.pieces.some(p=>p.row===r&&p.col===c&&p.side===state.turn))break;count++;}
+      for(const dir of [direction,direction+topology.axisCount])for(const cell of topology.ray(move.to,dir)){if(!next.pieces.some(p=>sameCell(p,cell)&&p.side===state.turn))break;count++;}
       if(count>=project.rules.winLength)next.winner=state.turn;
     }
     if(!next.winner&&next.pieces.length===project.board.rows*project.board.cols)next.winner='draw';
     next.turn=otherSide(state.turn);text=coord(move.to,project.board.rows);
   }else if(project.rules.engine==='reversi'){
-    const flips=reversiFlips(state.pieces,move.to.row,move.to.col,state.turn);
+    const flips=reversiFlips(state.pieces,move.to.row,move.to.col,state.turn,project.board);
     if(!flips.length)throw new Error('需要夹住至少一枚对方棋子。');
     next.pieces=state.pieces.map(p=>flips.some(f=>f.id===p.id)?{...p,side:state.turn}:p);
     next.pieces.push({id:crypto.randomUUID(),type:project.pieceTypes[0].id,side:state.turn,...move.to});

@@ -43,7 +43,7 @@ export default function App(){
   const [tool,setTool]=useState('select'),[selected,setSelected]=useState<Cell>(),[flipped,setFlipped]=useState(false),[zoom,setZoom]=useState(100);
   const [theme,setTheme]=useState(initialTheme),[focused,setFocused]=useState(false),[invalid,setInvalid]=useState<{cell:Cell;sequence:number}>();
   const customPlay=useCustomPlay(project,state,playing&&!inGallery);
-  const boardFit=useBoardFit(project.board.rows,project.board.cols,project.board.coordinates,!inGallery,playing&&!!customPlay.view.zones?.length);
+  const boardFit=useBoardFit(project.board.rows,project.board.cols,project.board.coordinates,!inGallery,playing&&!!customPlay.view.zones?.length,project.board.pattern);
   const focusButton=useRef<HTMLButtonElement>(null),lastFocus=useRef<HTMLElement|null>(null);
   const [brush,setBrush]=useState<{type:string;side:Side}>({type:project.pieceTypes[0].id,side:'white'}),[region,setRegion]=useState('');
   const [dialog,setDialog]=useState<Dialog>(null),[panel,setPanel]=useState<'properties'|'ai'>('properties');

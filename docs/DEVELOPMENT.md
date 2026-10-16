@@ -48,7 +48,31 @@ GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库
 
 ## 自定义规则协议
 
-`src/model.ts` 定义完整的 Project / GameState / Move 类型。坐标是从左上角开始的 0 基 `row` / `col`。六边形为图块外观，邻接关系由自定义代码定义，不会自动套用方格走法。
+`src/model.ts` 定义完整的 Project / GameState / Move 类型。坐标是从左上角开始的 0 基 `row` / `col`。`hex` 使用真正的蜂巢棋盘：正六边形尖顶，奇数行（row 为 1、3、5…）向右错开半格。项目继续保存 row / col，地形、棋子、拖放和封面共用同一套几何。翻转是整个棋盘旋转 180 度，逻辑坐标不变。
+
+### 通用棋盘拓扑
+
+规则沙箱在 `onMove`、`getLegalMoves`、`getGameView` 和 `evaluate` 中提供只读的 `boardTopology`，本地电脑搜索使用相同实现：
+
+| 方法 | 行为 |
+| --- | --- |
+| `contains(cell)` | 判断整数 row / col 是否在棋盘内 |
+| `neighbors(cell)` | 返回棋盘内相邻格；蜂巢六邻接，方格八邻接 |
+| `distance(a, b)` | 无障碍最短步数；蜂巢立方坐标距离，方格切比雪夫距离 |
+| `step(cell, direction, steps = 1)` | 沿固定方向走指定步数；可返回越界格，须用 contains 检查 |
+| `ray(cell, direction)` | 从下一格开始沿直线返回棋盘内格子；不会因棋子或区域自动停止 |
+| `toAxial(cell)` / `fromAxial({q,r})` | odd-r 行列与轴坐标转换：q = col − floor(row / 2)，r = row |
+| `directionCount` / `axisCount` | 蜂巢为 6 / 3，方格为 8 / 4 |
+
+蜂巢方向 0–5 依次为东、东北、西北、西、西南、东南；方格方向 0–7 依次为东、东北、北、西北、西、西南、南、东南。方向属于逻辑棋盘，不受观看方向影响。距离不计算障碍物；寻路、越子、河流代价等由规则通过 neighbors 和区域标签实现。沿蜂巢直线走时不能固定递增 row / col，必须使用 step 或 ray。
+
+```js
+const adjacent = boardTopology.neighbors(piece);
+const inRange = boardTopology.distance(piece, move.to) <= 2;
+const eastRay = boardTopology.ray(piece, 0);
+```
+
+内置连珠规则在蜂巢棋盘沿三个轴线判胜，黑白棋沿六方向夹击翻转；两者的提示与电脑搜索同步使用这些方向。标准国际象棋和中国象棋不适用于蜂巢布局：编辑器切换时自动改用自定义规则，旧文件仍保留原设计并可导入，但启动不兼容规则时会提示修正。已有自定义代码保持原样，需自行改用拓扑接口；「规则 → 载入示例规则」提供同时适用于蜂巢和方格的相邻移动示例，其中 blocked 区域会禁止进入。
 
 ```js
 function onMove(state, move, project) {

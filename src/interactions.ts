@@ -1,3 +1,5 @@
+import { boardMetrics } from './board-geometry';
+import type { Project } from './model';
 import { useLayoutEffect, useRef, useState } from 'react';
 
 export type Theme = 'light' | 'dark';
@@ -38,7 +40,7 @@ export function isTypingTarget(target:EventTarget|null){
 
 // The viewport already excludes headings/toolbars. Fit the board and both
 // player strips to its actual size, including rectangular and tall boards.
-export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=true,withZones=false){
+export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=true,withZones=false,pattern:Project['board']['pattern']='cells'){
   const ref=useRef<HTMLDivElement>(null),[size,setSize]=useState(480);
   useLayoutEffect(()=>{
     const el=ref.current;if(!el||!enabled)return;
@@ -49,14 +51,15 @@ export function useBoardFit(rows:number,cols:number,coordinates:boolean,enabled=
       const table=withZones?el.querySelector('.game-table')?.getBoundingClientRect():undefined;
       const board=table?el.querySelector('.board-frame')?.getBoundingClientRect():undefined;
       const extraHeight=table&&board?table.height-board.height:0,extraWidth=table&&board?table.width-board.width:0;
-      const fit=(height-92-extraHeight-bottom-frame-8)*cols/rows+left+frame+extraWidth;
+      const metrics=boardMetrics({rows,cols,pattern});
+      const fit=(height-92-extraHeight-bottom-frame-8)*metrics.width/metrics.height+left+frame+extraWidth;
       // Keep a usable board when a small screen needs to scroll the whole table.
       const minimum=withZones?Math.min(width-8,300+extraWidth):48;
       setSize(Math.max(minimum,Math.floor(Math.min(width-8,fit))));
     };
     measure();const observer=new ResizeObserver(()=>{cancelAnimationFrame(scheduled);scheduled=requestAnimationFrame(measure);});observer.observe(el);if(withZones&&stage)observer.observe(stage);
     return()=>{observer.disconnect();cancelAnimationFrame(scheduled);};
-  },[rows,cols,coordinates,enabled,withZones]);
+  },[rows,cols,coordinates,enabled,withZones,pattern]);
   return {ref,size};
 }
 

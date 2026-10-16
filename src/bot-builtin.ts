@@ -3,6 +3,7 @@ import { applyMove, hints } from './engine';
 import { otherSide, sameCell, type Cell, type GameState, type Move, type Project, type Side } from './model';
 import { xiangqiLegalMoves } from './xiangqi';
 import type { SearchAdapter } from './bot-search';
+import { createBoardTopology } from './board-geometry';
 
 const values: Record<string, number> = { k: 20000, q: 900, r: 500, b: 330, n: 320, p: 100, a: 200, c: 450 };
 const square = (s: string): Cell => ({ row: 8 - Number(s[1]), col: s.charCodeAt(0) - 97 });
@@ -24,12 +25,13 @@ export function builtinMoves(project: Project, state: GameState): Move[] {
 
 function linePotential(project: Project, state: GameState, cell: Cell, side: Side): number {
   const board = new Map(state.pieces.map(p => [key(p), p.side]));
+  const topology = createBoardTopology(project.board);
   let score = 0;
-  for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+  for (let direction = 0; direction < topology.axisCount; direction++) {
     let count = 1, open = 0;
     for (const sign of [-1, 1]) for (let i = 1; i <= project.rules.winLength; i++) {
-      const row = cell.row + dr * i * sign, col = cell.col + dc * i * sign;
-      if (row < 0 || row >= project.board.rows || col < 0 || col >= project.board.cols) break;
+      const {row,col} = topology.step(cell, direction, i*sign);
+      if (!topology.contains({row,col})) break;
       const occupant = board.get(key({ row, col }));
       if (occupant === side) count++; else { if (!occupant) open++; break; }
     }
@@ -39,18 +41,18 @@ function linePotential(project: Project, state: GameState, cell: Cell, side: Sid
 }
 
 export function builtinEvaluation(project: Project, state: GameState, side: Side): number {
-  const engine = project.rules.engine, { rows, cols } = project.board;
+  const engine = project.rules.engine, { rows, cols } = project.board, topology = createBoardTopology(project.board);
   if (engine === 'gomoku') {
     const board = new Map(state.pieces.map(p => [key(p), p.side])), length = project.rules.winLength;
     let value = 0;
     // Count unblocked winning windows, including lines with gaps.
     for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
-      for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
-        const end = { row: row + dr * (length - 1), col: col + dc * (length - 1) };
-        if (end.row >= rows || end.col < 0 || end.col >= cols) continue;
+      for (let direction = 0; direction < topology.axisCount; direction++) {
+        const end = topology.step({row,col},direction,length-1);
+        if (!topology.contains(end)) continue;
         let own = 0, enemy = 0;
         for (let i = 0; i < length; i++) {
-          const occupant = board.get(key({ row: row + dr * i, col: col + dc * i }));
+          const occupant = board.get(key(topology.step({row,col},direction,i)));
           if (occupant === side) own++; else if (occupant) enemy++;
         }
         if (!enemy && own) value += Math.pow(6, Math.min(own, 6));
@@ -73,6 +75,7 @@ export function builtinEvaluation(project: Project, state: GameState, side: Side
 }
 
 export function builtinAdapter(project: Project): SearchAdapter {
+  const topology = createBoardTopology(project.board);
   return {
     async *moves(state, check) {
       check();
@@ -81,7 +84,7 @@ export function builtinAdapter(project: Project): SearchAdapter {
       if (project.rules.engine === 'gomoku') {
         if (project.board.rows * project.board.cols > 25) {
           // Limit distant quiet placements, but retain every adjacent tactical move.
-          const nearby = moves.filter(m => state.pieces.some(p => Math.max(Math.abs(p.row - m.to.row), Math.abs(p.col - m.to.col)) <= 2));
+          const nearby = moves.filter(m => state.pieces.some(p => topology.distance(p,m.to) <= 2));
           if (nearby.length) moves = nearby;
         }
         const ranked = moves.map(move => ({ move, score: linePotential(project, state, move.to, state.turn) * 1.1 + linePotential(project, state, move.to, otherSide(state.turn)) - center(move.to) }));

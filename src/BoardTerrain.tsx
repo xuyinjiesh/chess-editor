@@ -1,11 +1,13 @@
 import { useId, type CSSProperties } from 'react';
 import type { Project } from './model';
+import { boardMetrics, cellCenter } from './board-geometry';
 import { footballPitchPath, hasFootballPitch, regionGeometry, terrainKind } from './terrain';
 
 export function BoardTerrain({ project, flipped }: { project: Project; flipped: boolean }) {
   const id = useId().replace(/:/g, ''), { rows, cols, pattern } = project.board;
-  if (!['grid', 'cells', 'xiangqi'].includes(pattern)) return null;
-  return <svg className="board-terrain" viewBox={`0 0 ${cols * 100} ${rows * 100}`} preserveAspectRatio="none" aria-hidden="true">
+  if (!['grid', 'cells', 'xiangqi', 'hex'].includes(pattern)) return null;
+  const metrics = boardMetrics(project.board);
+  return <svg className="board-terrain" viewBox={`0 0 ${metrics.width} ${metrics.height}`} preserveAspectRatio="none" aria-hidden="true">
     <defs>
       <pattern id={`${id}-waves`} width="180" height="36" patternUnits="userSpaceOnUse"><path d="M-40 18Q-10 9 20 18T80 18T140 18T200 18" className="terrain-wave"/></pattern>
       <pattern id={`${id}-hatch`} width="24" height="24" patternUnits="userSpaceOnUse"><path d="M-6 6L6-6M0 24L24 0M18 30L30 18" className="terrain-hatch"/></pattern>
@@ -17,16 +19,16 @@ export function BoardTerrain({ project, flipped }: { project: Project; flipped: 
     </>}
     {hasFootballPitch(project) && <path d={footballPitchPath} className="football-pitch-lines"/>}
     {project.regions.map(region => {
-      const { fill, outline } = regionGeometry(region.cells, rows, cols, flipped), kind = terrainKind(region);
-      const corner = kind === 'forbidden' ? region.cells.map(c => flipped ? {row:rows-1-c.row,col:cols-1-c.col} : c).sort((a,b)=>a.row-b.row||a.col-b.col)[0] : undefined;
+      const { fill, outline } = regionGeometry(region.cells, rows, cols, flipped, pattern), kind = terrainKind(region);
+      const corner = kind === 'forbidden' ? region.cells.map(c => cellCenter(project.board,c,flipped)).sort((a,b)=>a.y-b.y||a.x-b.x)[0] : undefined;
       return <g key={region.id} className={`terrain-zone terrain-${kind}`} style={{ '--region-color': region.color } as CSSProperties}>
         <path className="terrain-fill" d={fill}/>
         {kind !== 'region' && <path className="terrain-texture" d={fill} fill={`url(#${id}-${kind === 'river' ? 'waves' : 'hatch'})`}/>}
         <path className="terrain-outline" d={outline}/>
-        {corner && <g className="terrain-corner" transform={`translate(${corner.col*100+12} ${corner.row*100+12})`}><path d="M0 13V0H13"/><text x="18" y="20">禁</text></g>}
+        {corner && <g className="terrain-corner" transform={`translate(${corner.x-(pattern==='hex'?25:38)} ${corner.y-(pattern==='hex'?25:38)})`}><path d="M0 13V0H13"/><text x="18" y="20">禁</text></g>}
       </g>;
     })}
-    <g className="terrain-frame"><rect x="14" y="14" width={cols*100-28} height={rows*100-28}/><path d={`M14 36V14H36M${cols*100-36} 14H${cols*100-14}V36M14 ${rows*100-36}V${rows*100-14}H36M${cols*100-36} ${rows*100-14}H${cols*100-14}V${rows*100-36}`} strokeWidth="2"/></g>
+    {pattern!=='hex'&&<g className="terrain-frame"><rect x="14" y="14" width={cols*100-28} height={rows*100-28}/><path d={`M14 36V14H36M${cols*100-36} 14H${cols*100-14}V36M14 ${rows*100-36}V${rows*100-14}H36M${cols*100-36} ${rows*100-14}H${cols*100-14}V${rows*100-36}`} strokeWidth="2"/></g>}
   </svg>;
 }
 

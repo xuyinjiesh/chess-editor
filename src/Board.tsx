@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { boardAppearance, pieceLetterLayout } from './appearance';
 import { tokenArtwork } from './piece-art';
 import { BoardTerrain } from './BoardTerrain';
+import { boardMetrics, cellAtPoint, cellCenter, hexGridPath } from './board-geometry';
 import type { RuleMarker } from './custom-play';
 import { coord, sameCell, sideLabel, pieceSymbol, type Cell, type Piece, type PieceType, type Project } from './model';
 const CHESS_GLYPHS:Record<string,[string,string]>={k:['♔','♚'],q:['♕','♛'],r:['♖','♜'],b:['♗','♝'],n:['♘','♞'],p:['♙','♟']};
@@ -27,7 +28,11 @@ export function PieceIcon({type,side='white',symbol,shape='chess'}:{type:string;
 
 // Draw shared lines once, terminating at the outermost playable intersections.
 // Cell-centered games instead place their grid on the boundaries of each cell.
-function BoardLines({rows,cols,pattern}:{rows:number;cols:number;pattern:Project['board']['pattern']}){
+function BoardLines({rows,cols,pattern,flipped=false}:{rows:number;cols:number;pattern:Project['board']['pattern'];flipped?:boolean}){
+  if(pattern==='hex'){
+    const board={rows,cols,pattern},m=boardMetrics(board);
+    return <svg className="board-lines hex-lines" viewBox={`0 0 ${m.width} ${m.height}`} aria-hidden="true"><path d={hexGridPath(board,flipped)}/></svg>;
+  }
   if(!['grid','cells','xiangqi'].includes(pattern))return null;
   const w=cols*100,h=rows*100;
   if(pattern==='cells')return <svg className="board-lines cell-lines" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden="true"><g>{Array.from({length:cols-1},(_,i)=><line key={`v${i}`} x1={(i+1)*100} y1="0" x2={(i+1)*100} y2={h}/>)}{Array.from({length:rows-1},(_,i)=><line key={`h${i}`} x1="0" y1={(i+1)*100} x2={w} y2={(i+1)*100}/>)}</g></svg>;
@@ -42,7 +47,7 @@ function BoardLines({rows,cols,pattern}:{rows:number;cols:number;pattern:Project
     {xiangqi?<g className="river-labels"><text x="250" y="503">楚 河</text><text x="650" y="503">漢 界</text></g>:rows===15&&cols===15&&<g className="star-points">{[[3,3],[3,11],[7,7],[11,3],[11,11]].map(([r,c])=><circle key={`${r}-${c}`} cx={c*100+50} cy={r*100+50} r="7"/>)}</g>}
   </svg>;
 }
-function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,invalid,marker}:{marker?:string;piece:Piece;definition?:PieceType;row:number;col:number;selected:boolean;exiting:boolean;entering:boolean;drag?:{x:number;y:number};invalid?:number}){
+function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,invalid,marker,position}:{position?:CSSProperties;marker?:string;piece:Piece;definition?:PieceType;row:number;col:number;selected:boolean;exiting:boolean;entering:boolean;drag?:{x:number;y:number};invalid?:number}){
   const body=useRef<HTMLDivElement>(null),previous=useRef({side:piece.side,type:piece.type}),arriving=useRef(entering);
   useEffect(()=>{
     const old=previous.current;previous.current={side:piece.side,type:piece.type};
@@ -54,12 +59,23 @@ function PieceSprite({piece,definition,row,col,selected,exiting,entering,drag,in
     if(!invalid||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
     body.current?.animate([0,-6,6,-4,4,0].map(x=>({transform:`translateX(${x}px)`})),{duration:320});
   },[invalid]);
-  return <div className={`piece-sprite ${selected?'is-selected':''} ${exiting?'is-exiting':''} ${drag?'is-dragging':''}`} data-piece-id={piece.id} style={{transform:drag?`translate(${drag.x}px,${drag.y}px)`:`translate(calc(${col} * (100% + var(--piece-gap, 0px))),calc(${row} * (100% + var(--piece-gap, 0px))))`}} aria-hidden="true"><div className={`piece-body ${arriving.current?'is-arriving':''}`} ref={body}><PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>{marker&&<span className="piece-status-marker">{marker}</span>}</div></div>;
+  return <div className={`piece-sprite ${selected?'is-selected':''} ${exiting?'is-exiting':''} ${drag?'is-dragging':''}`} data-piece-id={piece.id} style={{...position,transform:drag?`translate(${drag.x}px,${drag.y}px)`:position?.transform??`translate(${col*100}%,${row*100}%)`}} aria-hidden="true"><div className={`piece-body ${arriving.current?'is-arriving':''}`} ref={body}><PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>{marker&&<span className="piece-status-marker">{marker}</span>}</div></div>;
 }
 
 type BoardProps={project:Project;pieces:Piece[];selected?:Cell;hints?:Cell[];markers?:RuleMarker[];pending?:boolean;lastMove?:{from?:Cell;to:Cell};flipped?:boolean;mini?:boolean;onCell?:(c:Cell)=>void;onDrop?:(from:Cell,to:Cell)=>void;onPick?:(cell:Cell)=>void;canDrag?:(piece:Piece)=>boolean;invalid?:{cell:Cell;sequence:number};tool?:string};
 export function Board({project,pieces,selected,hints=[],markers=[],pending=false,lastMove,flipped=false,mini=false,onCell,onDrop,onPick,canDrag,invalid,tool='select'}:BoardProps){
   const {rows,cols,pattern,light,dark,coordinates}=project.board;
+  const hex=pattern==='hex',metrics=boardMetrics(project.board);
+  function cellPosition(cell:Cell):CSSProperties|undefined{
+    if(!hex)return;
+    const {x,y}=cellCenter(project.board,cell,flipped);
+    return {left:`${(x-50)/metrics.width*100}%`,top:`${(y-metrics.cellHeight/2)/metrics.height*100}%`,width:`${100/metrics.width*100}%`,height:`${metrics.cellHeight/metrics.height*100}%`};
+  }
+  function piecePosition(cell:Cell):CSSProperties|undefined{
+    if(!hex)return;
+    const {x,y}=cellCenter(project.board,cell,flipped);
+    return {width:`${100/metrics.width*100}%`,height:`${100/metrics.height*100}%`,transform:`translate(${x-50}%,${y-50}%)`};
+  }
   const appearance=boardAppearance(project.board);
   const rowList=Array.from({length:rows},(_,i)=>flipped?rows-1-i:i),colList=Array.from({length:cols},(_,i)=>flipped?cols-1-i:i);
   const board=useRef<HTMLDivElement>(null),previous=useRef(pieces),ready=useRef(false),gesture=useRef<{id:number;piece:Piece;startX:number;startY:number;active:boolean}|undefined>(undefined),lastDrag=useRef(-Infinity);
@@ -69,9 +85,14 @@ export function Board({project,pieces,selected,hints=[],markers=[],pending=false
     setExits(old=>[...old.filter(p=>!pieces.some(n=>n.id===p.id)),...removed.filter(p=>!old.some(n=>n.id===p.id))]);
     const timer=setTimeout(()=>setExits([]),220);return()=>clearTimeout(timer);
   },[pieces]);
-  useEffect(()=>{gesture.current=undefined;setDrag(undefined);},[flipped,rows,cols,tool]);
+  useEffect(()=>{gesture.current=undefined;setDrag(undefined);},[flipped,rows,cols,pattern,tool]);
   useEffect(()=>{if(gesture.current){gesture.current=undefined;setDrag(undefined);}},[pieces]);
   function point(event:PointerEvent<HTMLDivElement>){
+    if(hex){
+      const el=board.current!,rect=el.getBoundingClientRect(),x=event.clientX-rect.left-el.clientLeft,y=event.clientY-rect.top-el.clientTop;
+      const target=cellAtPoint(project.board,{x:x/el.clientWidth*metrics.width,y:y/el.clientHeight*metrics.height},flipped);
+      return {x:x-el.clientWidth/metrics.width*50,y:y-el.clientHeight/metrics.height*50,target};
+    }
     const el=board.current!,rect=el.getBoundingClientRect(),style=getComputedStyle(el),pad=parseFloat(style.paddingLeft)||0,gap=parseFloat(style.columnGap)||0;
     const w=el.clientWidth-pad*2,h=el.clientHeight-pad*2,cw=(w-gap*(cols-1))/cols,ch=(h-gap*(rows-1))/rows,x=event.clientX-rect.left-el.clientLeft-pad,y=event.clientY-rect.top-el.clientTop-pad;
     const vr=Math.floor(y/(ch+gap)),vc=Math.floor(x/(cw+gap)),target=x>=0&&x<w&&y>=0&&y<h&&vr<rows&&vc<cols?{row:flipped?rows-1-vr:vr,col:flipped?cols-1-vc:vc}:undefined;
@@ -99,24 +120,24 @@ export function Board({project,pieces,selected,hints=[],markers=[],pending=false
     lastDrag.current=performance.now();
     const {target}=point(event);if(!cancel&&target&&!sameCell(g.piece,target))onDrop?.({row:g.piece.row,col:g.piece.col},target);
   }
-  return <div className={`board-frame ${mini?'mini':''} ${coordinates&&!mini?'with-coordinates':''}`} style={{'--light':light,'--dark':dark,'--board-text':appearance.text,'--piece-white':project.ui.sideColors?.white,'--piece-black':project.ui.sideColors?.black} as CSSProperties} aria-hidden={mini||undefined}>
-    {coordinates&&!mini&&<div className="rank-labels">{rowList.map(r=><span key={r}>{rows-r}</span>)}</div>}
-    <div className="board-surface" data-board-theme={appearance.id} data-dark-board={appearance.id==='midnight'||appearance.id==='nebula'||(appearance.id==='custom'&&appearance.text==='#b9c4d2')} style={{'--frame-a':appearance.frameA,'--frame-b':appearance.frameB,'--board-line':appearance.line,'--board-text':appearance.text} as CSSProperties}><div ref={board} className={`board pattern-${pattern} tool-${tool} ${drag?'is-dragging':''}`} role={mini?undefined:'grid'} aria-busy={pending||undefined} inert={pending} aria-label={mini?undefined:`${project.name}棋盘`} style={{'--rows':rows,'--cols':cols,'--light':light,'--dark':dark,aspectRatio:`${cols} / ${rows}`} as CSSProperties} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={e=>pointerEnd(e)} onPointerCancel={e=>pointerEnd(e,true)} onLostPointerCapture={()=>{gesture.current=undefined;setDrag(undefined);}}>
+  return <div className={`board-frame ${hex?'hex-frame':''} ${mini?'mini':''} ${coordinates&&!mini?'with-coordinates':''}`} style={{'--light':light,'--dark':dark,'--board-text':appearance.text,'--piece-white':project.ui.sideColors?.white,'--piece-black':project.ui.sideColors?.black} as CSSProperties} aria-hidden={mini||undefined}>
+    {coordinates&&!mini&&<div className="rank-labels">{rowList.map(r=><span key={r} style={hex?{top:`${cellCenter(project.board,{row:r,col:0},flipped).y/metrics.height*100}%`}:undefined}>{rows-r}</span>)}</div>}
+    <div className="board-surface" data-board-theme={appearance.id} data-dark-board={appearance.id==='midnight'||appearance.id==='nebula'||(appearance.id==='custom'&&appearance.text==='#b9c4d2')} style={{'--frame-a':appearance.frameA,'--frame-b':appearance.frameB,'--board-line':appearance.line,'--board-text':appearance.text} as CSSProperties}><div ref={board} className={`board pattern-${pattern} tool-${tool} ${drag?'is-dragging':''}`} role={mini?undefined:'grid'} aria-busy={pending||undefined} inert={pending} aria-label={mini?undefined:`${project.name}棋盘`} style={{'--rows':rows,'--cols':cols,'--light':light,'--dark':dark,aspectRatio:`${metrics.width} / ${metrics.height}`} as CSSProperties} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={e=>pointerEnd(e)} onPointerCancel={e=>pointerEnd(e,true)} onLostPointerCapture={()=>{gesture.current=undefined;setDrag(undefined);}}>
       <BoardTerrain project={project} flipped={flipped}/>
-      <BoardLines rows={rows} cols={cols} pattern={pattern}/>
+      <BoardLines rows={rows} cols={cols} pattern={pattern} flipped={flipped}/>
       {rowList.flatMap(row=>colList.map(col=>{
         const cell={row,col},piece=pieces.find(p=>sameCell(p,cell)),definition=piece&&project.pieceTypes.find(t=>t.id===piece.type),regions=project.regions.filter(r=>r.cells.some(c=>sameCell(c,cell)));
-        const legacyRegions=['checker','hex'].includes(pattern)?regions:[];
-        if(mini)return <div key={`${row}-${col}`} className={`cell ${(row+col)%2?'dark':'light'}`}>{legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}}/>)}{piece&&<PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/>}</div>;
-        return <button type="button" key={`${row}-${col}`} data-row={row} data-col={col} className={`cell ${(row+col)%2?'dark':'light'} ${selected&&sameCell(selected,cell)?'selected':''} ${lastMove&&(sameCell(lastMove.to,cell)||(lastMove.from&&sameCell(lastMove.from,cell)))?'last-move':''} ${drag?.target&&sameCell(drag.target,cell)?'drag-target':''} ${invalid&&sameCell(invalid.cell,cell)?'invalid-target':''}`}
+        const legacyRegions=pattern==='checker'?regions:[];
+        if(mini)return <div key={`${row}-${col}`} style={cellPosition(cell)} className={`cell ${(row+col)%2?'dark':'light'}`}>{legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}}/>)}{piece&&<span className={hex?'hex-mini-piece':'mini-piece'}><PieceIcon type={piece.type} side={definition?.neutral?'neutral':piece.side} shape={definition?.shape} symbol={definition&&pieceSymbol(definition,piece.side)}/></span>}</div>;
+        return <button type="button" key={`${row}-${col}`} data-row={row} data-col={col} style={cellPosition(cell)} className={`cell ${(row+col)%2?'dark':'light'} ${selected&&sameCell(selected,cell)?'selected':''} ${lastMove&&(sameCell(lastMove.to,cell)||(lastMove.from&&sameCell(lastMove.from,cell)))?'last-move':''} ${drag?.target&&sameCell(drag.target,cell)?'drag-target':''} ${invalid&&sameCell(invalid.cell,cell)?'invalid-target':''}`}
           aria-label={`${coord(cell,rows)}${piece?` ${definition?.neutral?'中立':sideLabel(project,piece.side)}${definition?.shape==='xiangqi'?pieceSymbol(definition,piece.side):definition?.name||piece.type}`:' 空格'}${markers.find(m=>sameCell(m.cell,cell))?' '+markers.find(m=>sameCell(m.cell,cell))!.label:''}`} title={regions.map(r=>r.name).join(' · ')||undefined} role={mini?undefined:'gridcell'} tabIndex={mini?-1:0}
           onClick={e=>{if(e.detail>0&&performance.now()-lastDrag.current<250)return;onCell?.(cell);}}>
           {legacyRegions.map(r=><span key={r.id} className="region-mark" style={{background:r.color+'55',borderColor:r.color}} title={r.name}/>)}
           {hints.some(h=>sameCell(h,cell))&&<span className={`move-hint ${piece?'capture':''}`}/>}
         </button>;
       }))}
-      {!mini&&<div className="piece-layer">{[...pieces,...exits.filter(p=>!pieces.some(n=>n.id===p.id))].map(piece=><PieceSprite key={piece.id} piece={piece} marker={pieces.some(p=>p.id===piece.id)?markers.find(m=>sameCell(m.cell,piece))?.label:undefined} definition={project.pieceTypes.find(t=>t.id===piece.type)} row={flipped?rows-1-piece.row:piece.row} col={flipped?cols-1-piece.col:piece.col} selected={!!selected&&sameCell(selected,piece)} exiting={!pieces.some(p=>p.id===piece.id)} entering={ready.current} drag={drag?.id===piece.id?drag:undefined} invalid={invalid&&sameCell(invalid.cell,piece)?invalid.sequence:undefined}/>)}</div>}
+      {!mini&&<div className="piece-layer">{[...pieces,...exits.filter(p=>!pieces.some(n=>n.id===p.id))].map(piece=><PieceSprite key={piece.id} piece={piece} position={piecePosition(piece)} marker={pieces.some(p=>p.id===piece.id)?markers.find(m=>sameCell(m.cell,piece))?.label:undefined} definition={project.pieceTypes.find(t=>t.id===piece.type)} row={flipped?rows-1-piece.row:piece.row} col={flipped?cols-1-piece.col:piece.col} selected={!!selected&&sameCell(selected,piece)} exiting={!pieces.some(p=>p.id===piece.id)} entering={ready.current} drag={drag?.id===piece.id?drag:undefined} invalid={invalid&&sameCell(invalid.cell,piece)?invalid.sequence:undefined}/>)}</div>}
     </div></div>
-    {coordinates&&!mini&&<div className="file-labels">{colList.map(c=><span key={c}>{String.fromCharCode(97+c)}</span>)}</div>}
+    {coordinates&&!mini&&<div className="file-labels">{colList.map(c=><span key={c} style={hex?{left:`${cellCenter(project.board,{row:flipped?0:rows-1,col:c},flipped).x/metrics.width*100}%`}:undefined}>{String.fromCharCode(97+c)}</span>)}</div>}
   </div>;
 }

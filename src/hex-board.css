@@ -1,0 +1,19 @@
+/* Geometry is shared with hit testing, terrain, covers and rule workers. */
+.board.pattern-hex{display:block;padding:0;gap:0;background:transparent;isolation:isolate}
+.board.pattern-hex>.cell{position:absolute;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);z-index:1}
+.board.pattern-hex>.cell.selected{box-shadow:none}
+.board.pattern-hex>.cell:is(:hover,:focus-visible,.selected,.drag-target){background:color-mix(in srgb,var(--accent) 26%,var(--light));outline:none}
+.board.pattern-hex>.cell:after{box-shadow:none;border:0}
+.board.pattern-hex>.cell.invalid-target:after{background:#b85c4966}
+.pattern-hex>.board-terrain{z-index:2}
+.pattern-hex>.board-lines{z-index:3;overflow:visible}
+.pattern-hex .piece-layer{inset:0}
+.pattern-hex .move-hint,.pattern-hex .move-hint.capture{height:auto;aspect-ratio:1}
+.mini-piece{display:contents}
+.hex-mini-piece{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.hex-frame .rank-labels,.hex-frame .file-labels{display:block}
+.hex-frame .rank-labels span{position:absolute;left:0;width:100%;text-align:center;transform:translateY(-50%)}
+.hex-frame .file-labels span{position:absolute;bottom:0;transform:translateX(-50%)}
+.layout-preview.hex{display:grid;grid-template-columns:repeat(3,7px);grid-auto-rows:6px;gap:0;padding-top:2px}
+.layout-preview.hex i{width:7px;height:8px;border-radius:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.layout-preview.hex i:nth-child(n+4):nth-child(-n+6){transform:translateX(3.5px)}

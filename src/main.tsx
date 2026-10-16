@@ -5,6 +5,7 @@ import './interaction.css';
 import './custom-cards.css';
 import './appearance.css';
 import './terrain.css';
+import './hex-board.css';
 import './gallery.css';
 import './game-zones.css';
 createRoot(document.getElementById('root')!).render(<App/>);

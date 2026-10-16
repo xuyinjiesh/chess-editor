@@ -1,10 +1,11 @@
 import type { Cell, GameState, Move, Project, RuleResult, Side } from './model';
+import { createBoardTopology } from './board-geometry';
 import type { SearchAdapter } from './bot-search';
 
 // Self-contained so the same tested adapter can run inside the opaque sandbox.
 // Every hook gets fresh inputs; rule mutations must not corrupt other branches.
-export function customAdapter(project: Project): SearchAdapter {
-  const hooks = new Function(project.rules.code + '\n;return { onMove: typeof onMove === "function" ? onMove : null, getLegalMoves: typeof getLegalMoves === "function" ? getLegalMoves : null, evaluate: typeof evaluate === "function" ? evaluate : null };')() as {
+export function customAdapter(project: Project, topology = createBoardTopology(project.board)): SearchAdapter {
+  const hooks = new Function('boardTopology', project.rules.code + '\n;return { onMove: typeof onMove === "function" ? onMove : null, getLegalMoves: typeof getLegalMoves === "function" ? getLegalMoves : null, evaluate: typeof evaluate === "function" ? evaluate : null };')(topology) as {
     onMove: (state: GameState, move: Move, project: Project) => RuleResult | Promise<RuleResult>;
     getLegalMoves?: (state: GameState, project: Project) => Move[] | Promise<Move[]>;
     evaluate?: (state: GameState, side: Side, project: Project) => number | Promise<number>;

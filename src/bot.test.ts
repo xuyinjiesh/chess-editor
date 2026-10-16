@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { builtinAdapter, builtinMoves } from './bot-builtin';
+import { createBoardTopology } from './board-geometry';
 import { customAdapter } from './bot-custom';
 import { searchGame, type SearchAdapter } from './bot-search';
 import { navigateGameHistory } from './bot-history';
@@ -114,7 +115,7 @@ describe('custom game adapters', () => {
   });
   it('serializes the search and adapter without module dependencies', async () => {
     const project: Project = clone(TEMPLATES[4]);
-    const isolatedSearch = new Function('project', 'state', 'limits', `return (${searchGame.toString()})((${customAdapter.toString()})(project),state,limits)`);
+    const isolatedSearch = new Function('project', 'state', 'limits', `return (${searchGame.toString()})((${customAdapter.toString()})(project, (${createBoardTopology.toString()})(project.board)),state,limits)`);
     expect((await isolatedSearch(project, initialState(project), { ...limits, maxDepth: 1 })).move).toBeTruthy();
   });
 });
