@@ -64,3 +64,58 @@ html[data-theme=dark] .game-zone .zone-item{--card-ink:inherit}
 .game-zone .zone-item.with-piece.selected{border-color:var(--card-ink);background:color-mix(in srgb,var(--card-ink) 8%,var(--surface))}
 .game-zone .zone-item.with-piece.selected .zone-item-count{background:var(--card-ink);border-color:var(--card-ink);color:var(--surface)}
 .game-zone .zone-item.with-piece.depleted{opacity:.35}
+
+/* OpenDesign Local Codex: ink-blue augment cards, metal frames and hex emblems.
+   Opt-in semantics keep existing reserves and downloaded card projects intact. */
+.game-zone:has([data-skill-type]){--skill-card:oklch(24% .032 255);--skill-hover:oklch(18% .032 255);--skill-text:oklch(96% .012 85);--skill-muted:oklch(78% .018 250);--skill-line:oklch(50% .045 80);--skill-metal:oklch(75% .075 80);--skill-metal-soft:oklch(87% .048 85)}
+.game-zone [data-skill-type=instant]{--skill-type-color:oklch(82% .07 220)}
+.game-zone [data-skill-type=trick]{--skill-type-color:oklch(83% .09 65)}
+.game-zone [data-skill-type=persistent]{--skill-type-color:oklch(83% .065 155)}
+.game-zone .zone-item[data-skill-type]{position:relative;background:var(--skill-card);color:var(--skill-text);border:1px solid var(--skill-line);box-shadow:none;scroll-snap-align:start;transition:background .15s,border-color .15s,transform .15s}
+.game-zone .zone-item[data-skill-type] .rule-card-heading strong{font-family:'Songti SC','STSong','SimSun',serif;color:var(--skill-text);line-height:1.4;letter-spacing:0}
+.game-zone .zone-item[data-skill-type] .rule-card-heading small{color:var(--skill-muted)}
+.game-zone .zone-item[data-skill-type] .zone-item-description{color:var(--skill-text);font-size:12px;line-height:1.8;letter-spacing:0;text-wrap:pretty}
+.game-zone .zone-item[data-skill-type] .rule-card-footer{color:var(--skill-metal-soft);font-size:11px;line-height:1.6;border-top:1px solid color-mix(in srgb,var(--skill-metal) 27%,transparent);padding-top:8px}
+.game-zone button.zone-item[data-skill-type]:enabled:hover{border-color:var(--skill-metal-soft);background:var(--skill-hover)}
+.game-zone .zone-item[data-skill-type].selected{border-color:var(--skill-metal-soft);box-shadow:inset 0 0 0 1px var(--skill-metal-soft)}
+.game-zone button.zone-item[data-skill-type]:focus-visible,.game-zone[data-zone-kind=hand] .game-zone-items:focus-visible{outline:3px solid var(--text-primary);outline-offset:3px}
+.zone-skill-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.zone-skill-emblem{display:block;width:42px;height:47px;color:var(--skill-metal);flex-shrink:0;pointer-events:none}
+.zone-skill-type{display:flex;align-items:center;gap:5px;color:var(--skill-type-color);font-size:11px;line-height:1.5;white-space:nowrap}
+.zone-skill-type::before{content:'';width:4px;height:4px;background:currentColor;transform:rotate(45deg)}
+.game-zone[data-zone-kind=hand] .game-zone-heading h3{font-size:12px}
+.game-zone[data-zone-kind=hand] .game-zone-items{justify-content:flex-start;scroll-snap-type:x proximity;padding:5px 4px 7px}
+.game-zone[data-zone-kind=hand] .zone-item[data-skill-type]{flex-basis:205px;grid-template-columns:34px minmax(0,1fr);gap:3px 10px;padding:12px;align-items:start}
+.game-zone[data-zone-kind=hand] .zone-skill-top{display:contents}
+.game-zone[data-zone-kind=hand] .zone-skill-emblem{width:34px;height:38px;grid-column:1;grid-row:1/3}
+.game-zone[data-zone-kind=hand] .zone-skill-type{grid-column:2;grid-row:2}
+.game-zone[data-zone-kind=hand] .zone-item[data-skill-type] .rule-card-heading{grid-column:2;grid-row:1;align-self:start}
+.game-zone[data-zone-kind=hand] .zone-item[data-skill-type] .rule-card-heading strong{font-size:16px}
+.game-zone[data-zone-kind=hand] .zone-item-description{margin:7px 0}
+.game-zone[data-zone-kind=offer]{container:skill-offer / inline-size;border-color:color-mix(in srgb,var(--card-ink) 30%,var(--line));padding:14px}
+.game-zone[data-zone-kind=offer] .game-zone-heading h3{font-family:'Songti SC','STSong','SimSun',serif;font-size:20px}
+.game-zone[data-zone-kind=offer] .game-zone-description{font-size:11px;line-height:1.8}
+.game-zone[data-zone-kind=offer] .game-zone-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow:visible;padding:5px 0}
+.game-zone[data-zone-kind=offer] .zone-item{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-height:240px;padding:16px 13px 12px;border-color:var(--skill-metal);border-radius:8px;box-shadow:inset 0 0 0 3px var(--skill-card),inset 0 0 0 4px color-mix(in srgb,var(--skill-metal) 18%,transparent)}
+.game-zone[data-zone-kind=offer] .zone-item::before,.game-zone[data-zone-kind=offer] .zone-item::after{content:'';position:absolute;width:12px;height:12px;border-color:var(--skill-metal-soft);border-style:solid;pointer-events:none}
+.game-zone[data-zone-kind=offer] .zone-item::before{left:5px;top:5px;border-width:1px 0 0 1px}
+.game-zone[data-zone-kind=offer] .zone-item::after{right:5px;bottom:5px;border-width:0 1px 1px 0}
+.game-zone[data-zone-kind=offer] .zone-item .rule-card-heading{align-self:stretch}
+.game-zone[data-zone-kind=offer] .zone-item .rule-card-heading strong{font-size:21px}
+.game-zone[data-zone-kind=offer] .zone-item-description{flex:1;margin-bottom:4px}
+.game-zone[data-zone-kind=offer] button.zone-item:enabled:hover{transform:translateY(-3px);box-shadow:0 7px 16px #18232f1a,inset 0 0 0 3px var(--skill-hover),inset 0 0 0 4px color-mix(in srgb,var(--skill-metal) 42%,transparent)}
+.gallery-play-board.has-game-zones .game-table.with-skill-zones{max-width:640px}
+.gallery-play-board .game-table.with-skill-zones .game-table-board{width:100%;max-width:480px;margin-inline:auto}
+.canvas .board-stage:has(.with-skill-zones){width:calc(min(100cqi - 8px,640px) * var(--board-zoom,1))}
+.canvas .with-skill-zones .game-table-board{width:100%;max-width:calc(480px * var(--board-zoom,1));margin-inline:auto}
+@container skill-offer (max-width:440px){
+  .game-zone[data-zone-kind=offer] .game-zone-items{grid-template-columns:minmax(0,1fr);gap:9px}
+  .game-zone[data-zone-kind=offer] .zone-item{display:grid;grid-template-columns:46px minmax(0,1fr);gap:4px 12px;padding:15px;min-height:0;align-items:start}
+  .game-zone[data-zone-kind=offer] .zone-skill-top{grid-column:1;grid-row:1/4;flex-direction:column;justify-content:flex-start;gap:8px;margin-top:2px}
+  .game-zone[data-zone-kind=offer] .zone-item .rule-card-heading{grid-column:2;grid-row:1}
+  .game-zone[data-zone-kind=offer] .zone-item .rule-card-heading strong{font-size:20px}
+  .game-zone[data-zone-kind=offer] .zone-item-description{grid-column:2;grid-row:2;font-size:13px;line-height:1.75;margin:2px 0 4px}
+  .game-zone[data-zone-kind=offer] .zone-item .rule-card-footer{grid-column:2;grid-row:3;padding-top:6px}
+  .game-zone[data-zone-kind=offer] button.zone-item:enabled:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){.game-zone .zone-item[data-skill-type]{transition:none}.game-zone button.zone-item[data-skill-type]:enabled:hover{transform:none}}

@@ -3,6 +3,7 @@ import { runSandbox } from './sandbox';
 import { sameCell, type Cell, type GameState, type Move, type Piece, type Project } from './model';
 import { validateRuleCards, type RuleCard } from './custom-cards';
 import { validateGameZones, zonesFromCards, zoneSelections, type GameZone } from './game-zones';
+import { validateRuleViewMove } from './rule-view-move';
 
 export type RuleChoice = { action: string; label: string; interaction: 'move' | 'place'; description?: string };
 export type RuleMarker = { cell: Cell; label: string };
@@ -14,10 +15,7 @@ export function validateCustomView(input: unknown, project: Project): CustomView
   if (!input || typeof input !== 'object') throw new Error('规则界面需返回对象。');
   const raw = input as Record<string, unknown>;
   const cell = (c: Cell) => c && Number.isInteger(c.row) && Number.isInteger(c.col) && c.row >= 0 && c.col >= 0 && c.row < project.board.rows && c.col < project.board.cols;
-  const move = (m: Move) => {
-    if (!m || !cell(m.to) || (m.from !== undefined && !cell(m.from)) || (m.action !== undefined && (typeof m.action !== 'string' || !/^[a-z0-9-]{1,64}$/.test(m.action))) || (m.promotion !== undefined && !['q','r','b','n'].includes(m.promotion))) throw new Error('规则界面返回了无效走法。');
-    return { to: { row: m.to.row, col: m.to.col }, ...(m.from ? { from: { row: m.from.row, col: m.from.col } } : {}), ...(m.action ? { action: m.action } : {}), ...(m.promotion ? { promotion: m.promotion } : {}) };
-  };
+  const move = (m: Move) => validateRuleViewMove(m,project);
   if (raw.message !== undefined && (typeof raw.message !== 'string' || raw.message.length > 1000)) throw new Error('规则提示需为不超过 1,000 字的文本。');
   if (raw.interaction !== undefined && !['move','place','swap'].includes(String(raw.interaction))) throw new Error('规则交互模式无效。');
   if (!Array.isArray(raw.moves) || raw.moves.length > 10000 || !Array.isArray(raw.actions) || raw.actions.length > 16) throw new Error('规则提示或操作数量超出限制。');

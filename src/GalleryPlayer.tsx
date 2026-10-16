@@ -93,7 +93,7 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     <div className="gallery-player-top"><button className="text-button" onClick={() => { cancel(); onClose(); }}><ArrowLeft size={16}/>返回作品介绍</button><span>独立试玩 · 编辑器草稿已保留</span></div>
     <div className="gallery-player-layout">
       <div className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
-        <GameTable zones={custom.view.zones} project={project} turn={custom.viewTurn} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction}>
+        <GameTable zones={custom.view.zones} project={project} turn={custom.viewTurn} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction} onMove={submit}>
         <Board project={project} pieces={state.pieces} pending={custom.pending} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={cell => { playBoardSound('pick'); setSelected(cell); }} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
         </GameTable>
         <BoardLegend project={project}/>

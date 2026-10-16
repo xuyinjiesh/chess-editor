@@ -53,7 +53,7 @@ describe('incident chess gallery and full skill catalog',()=>{
     s=play(s,move(6,0,5,0));
     expect(s.turn).toBe('white');expect(data(s).offer.options).toHaveLength(3);
     expect(api.onMove(before,move(6,0,5,0))).toEqual(api.onMove(before,move(6,0,5,0)));
-    expect(view(s).actions).toHaveLength(3);
+    expect(view(s).zones?.find(z=>z.kind === 'offer')?.items).toHaveLength(3);
     expect(api.onMove(s,move(6,2,5,2)).valid).toBe(false);
     s=choose(s,data(s).offer.options[0]);
     if (data(s).pendingSkill) s=play(s,button('skip-skill'));
@@ -84,6 +84,24 @@ describe('incident chess gallery and full skill catalog',()=>{
     expect(data(s).offer.options).not.toContain('如履平地');expect(data(s).offer.options).not.toContain('金蝉脱壳');
     expect(data(s).offer.options).not.toContain('战功晋升II');
     expect(data(s).offer.options.some((s:string)=>s.startsWith('傀儡术') || s === '大衍诀')).toBe(false);
+  });
+  it('exposes offers and owned skills in hand zones without duplicating panel controls',()=>{
+    const s=fixture(undefined,{tricks:{white:['以逸待劳','声东击西','金蝉脱壳'],black:['金蝉脱壳']},persistents:{white:['如履平地']}});
+    const v=view(s),hand=v.zones!.find(z=>z.owner === 'white')!;
+    expect(v.choices?.map(c=>c.action)).toEqual(['move']);
+    expect(v.actions).toEqual([]);
+    expect(hand.items.find(i=>i.label === '以逸待劳')).toMatchObject({skillType:'trick',action:skillAction('trick','以逸待劳'),interaction:'place',disabled:false});
+    expect(hand.items.find(i=>i.label === '声东击西')?.move).toEqual(button(skillAction('trick','声东击西')));
+    expect(hand.items.find(i=>i.label === '金蝉脱壳')).toMatchObject({caption:'被动触发',action:undefined,move:undefined});
+    expect(hand.items.find(i=>i.label === '如履平地')).toMatchObject({skillType:'persistent',caption:'持续生效'});
+    expect(v.zones!.find(z=>z.owner === 'black')!.items.every(i=>!i.action && !i.move)).toBe(true);
+    const offered=view(fixture(undefined,{offer:{playerId:'white',options:['迷你炮','如履平地','金蝉脱壳']},tricks:{white:['声东击西']}}));
+    expect(offered.actions).toEqual([]);
+    expect(offered.zones!.find(z=>z.kind === 'offer')!.items.map(i=>i.skillType)).toEqual(['instant','persistent','trick']);
+    expect(offered.zones!.find(z=>z.kind === 'hand' && z.owner === 'white')!.items[0].move).toBeUndefined();
+    const targeted=view(pending('迷你炮'));
+    expect(targeted.zones!.find(z=>z.owner === 'white')!.items[0]).toMatchObject({action:skillAction('apply','迷你炮'),interaction:'place'});
+    expect(targeted.actions[0].move).toEqual(button('skip-skill'));
   });
 });
 

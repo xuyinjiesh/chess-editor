@@ -143,14 +143,39 @@ function onMove(state,move) {
   return incidentSave(cc,message);
 }
 
+function incidentSkillDescription(skill) {
+  return SKILL_DESCRIPTIONS[skill].replace('对方视为真兵','幻兵身份公开').replace('对方视为真子','虚子身份公开').replace('在对手视角生成两个幻·马','生成两个公开身份的幻·马');
+}
+
+function incidentSkillCard(skill,extra={}) {
+  return {id:`skill-${ALL_SKILLS.indexOf(skill)}`,label:skill,skillType:SKILL_TYPES[skill],description:incidentSkillDescription(skill).replace(/^(瞬发|锦囊|持续)：/,''),...extra};
+}
+
+function incidentHandZones(cc,state) {
+  const playable=!!state.data.incident && !state.winner && !cc.offer && !cc.pendingSkill && !cc.awaitingResurrect && !cc.pendingSecondMove;
+  return cc.players.map(side=>({
+    id:`skills-${side}`,label:`${side === 'white' ? '红' : '黑'}方手牌`,owner:side,kind:'hand',
+    emptyLabel:'尚未获得技能 · 行动后选择强化',
+    items:[...(cc.tricks[side] || []).map(skill=>{
+      const card=incidentSkillCard(skill,{caption:skill === '金蝉脱壳' ? '被动触发' : '锦囊留存'});
+      if (skill === '金蝉脱壳' || side !== state.turn || !playable) return card;
+      const action=incidentAction('trick',skill);
+      if (skill === '声东击西') return {...card,move:incidentButtonMove(action),caption:'点击使用'};
+      const available=!!incidentTargets(cc,side,skill,'trick').length;
+      return {...card,action,interaction:incidentMulti.includes(skill) ? 'move' : 'place',disabled:!available,caption:available ? '选择目标' : '暂无可用目标'};
+    }),...(cc.persistents[side] || []).map(skill=>{
+      const card=incidentSkillCard(skill,{caption:'持续生效'});
+      if (!['傀儡术·悬丝','傀儡术·皮影'].includes(skill) || side !== state.turn || !playable) return card;
+      const available=!!findYanShi(cc,side) && !!incidentTargets(cc,side,skill,'puppet').length;
+      return {...card,action:incidentAction('puppet',skill),interaction:'place',disabled:!available,caption:available ? '选择召唤位置' : '暂无召唤位置'};
+    })],
+  }));
+}
+
 function getGameView(state) {
   const cc=incidentRestore(state),owner=state.turn;
-  const view={message:'移动一枚棋子，随后三选一技能。幻子身份公开。',interaction:'move',actions:[],choices:[],markers:[],details:[]};
-  for (const side of cc.players) {
-    const persistent=cc.persistents[side] || [],tricks=cc.tricks[side] || [];
-    view.details.push({title:`${side === 'white' ? '红' : '黑'}方技能 · 持续 ${persistent.length} / 锦囊 ${tricks.length}`,text:[...persistent,...tricks].map(s=>`${s}\n${SKILL_DESCRIPTIONS[s]}`).join('\n\n') || '尚未获得技能。'});
-  }
-  view.details.push({title:`技能图鉴 · ${ALL_SKILLS.length} 种`,text:ALL_SKILLS.map(s=>`${s}\n${SKILL_DESCRIPTIONS[s]}`).join('\n\n')});
+  const view={message:'移动一枚棋子，随后三选一技能。幻子身份公开。',interaction:'move',actions:[],choices:[],markers:[],details:[],zones:incidentHandZones(cc,state)};
+  view.details.push({title:`技能图鉴 · ${ALL_SKILLS.length} 种`,text:ALL_SKILLS.map(s=>`${s}\n${incidentSkillDescription(s)}`).join('\n\n')});
   for (const row of cc.boardState) for (const p of row) if (p) {
     const labels=[];
     if (p.armored) labels.push('护甲');
@@ -168,15 +193,18 @@ function getGameView(state) {
     view.actions=[{label:'开始对局',move:incidentButtonMove('begin')}];return view;
   }
   if (cc.offer) {
-    view.message='本次行动已完成，请三选一技能。选择后才换方；瞬发技能还需指定目标。';
-    view.actions=cc.offer.options.map(s=>({label:s,description:SKILL_DESCRIPTIONS[s],move:incidentButtonMove(incidentAction('choose',s))}));
-    if (!view.actions.length) view.actions.push({label:'结束回合',move:incidentButtonMove('skip-offer')});
+    view.message='本次行动已完成，请在手牌区选择一个强化。';
+    if (cc.offer.options.length) view.zones.splice(view.zones.findIndex(z=>z.owner === owner),0,{
+      id:'skill-offer',label:'选择强化',owner,kind:'offer',description:'三选一 · 瞬发立即施放，锦囊收入手牌，持续长期生效。',
+      items:cc.offer.options.map(s=>incidentSkillCard(s,{move:incidentButtonMove(incidentAction('choose',s)),caption:SKILL_TYPES[s] === 'instant' ? '选择 · 立即施放' : SKILL_TYPES[s] === 'trick' ? '选择 · 收入手牌' : '选择 · 持续生效'})),
+    });
+    else view.actions.push({label:'结束回合',move:incidentButtonMove('skip-offer')});
     return view;
   }
   if (cc.pendingSkill) {
     const skill=cc.pendingSkill.skill;
     view.message=incidentMulti.includes(skill) ? `施放「${skill}」：先选棋子，再选落点。` : `施放「${skill}」：点击一个高亮目标。`;
-    view.choices=[{action:incidentAction('apply',skill),label:skill,interaction:incidentMulti.includes(skill) ? 'move' : 'place',description:SKILL_DESCRIPTIONS[skill]}];
+    view.zones.find(z=>z.owner === owner).items.unshift(incidentSkillCard(skill,{id:'pending-skill',action:incidentAction('apply',skill),interaction:incidentMulti.includes(skill) ? 'move' : 'place',caption:'待施放 · 选择目标'}));
     view.actions=[{label:'跳过此技能',move:incidentButtonMove('skip-skill')}];return view;
   }
   if (cc.awaitingResurrect === owner) {
@@ -190,12 +218,6 @@ function getGameView(state) {
     view.message='这枚棋子可再行动一次，也可放弃第二次移动。';
     view.actions=[{label:'放弃第二次移动',move:incidentButtonMove('end-turn')}];return view;
   }
-  for (const skill of cc.tricks[owner] || []) {
-    if (skill === '金蝉脱壳') continue;
-    if (skill === '声东击西') view.actions.push({label:'使用声东击西',description:SKILL_DESCRIPTIONS[skill],move:incidentButtonMove(incidentAction('trick',skill))});
-    else view.choices.push({action:incidentAction('trick',skill),label:`锦囊 · ${skill}`,interaction:incidentMulti.includes(skill) ? 'move' : 'place',description:SKILL_DESCRIPTIONS[skill]});
-  }
-  for (const skill of ['傀儡术·悬丝','傀儡术·皮影']) if ((cc.persistents[owner] || []).includes(skill) && findYanShi(cc,owner)) view.choices.push({action:incidentAction('puppet',skill),label:skill,interaction:'place',description:SKILL_DESCRIPTIONS[skill]});
   if (cc.phantomSideArmed[owner]) view.message+=' 声东击西已就绪：本回合首次横移兵会留下幻兵。';
   return view;
 }

@@ -64,6 +64,21 @@ describe('portable game zones',()=>{
     expect(controls.hints({row:1,col:1})).toEqual([{row:3,col:2}]);
     expect(controls.prepareMove({action:'pass',to:{row:0,col:0}}).action).toBe('pass');
   });
+  it('validates direct card moves and keeps them out of board action selection',()=>{
+    const item={id:'offer',label:'强化',skillType:'trick',move:{action:'choose-1',to:{row:0,col:0},html:'<script>'}};
+    const zone={id:'offer',label:'选择强化',kind:'offer',owner:'white',items:[item]};
+    const zones=validateGameZones([zone],project);
+    expect(zones[0].items[0].move).toEqual({action:'choose-1',to:{row:0,col:0}});
+    expect(zoneSelections(zones,'white')).toEqual([]);
+    for(const move of [null,{}, {to:{row:-1,col:0}}, {to:{row:project.board.rows,col:0}}, {to:{row:0,col:0},action:'<script>'}, {to:{row:0,col:0},promotion:'king'}]) expect(()=>view([{...zone,items:[{...item,move}]}])).toThrow();
+    for(const changes of [{action:'choose-1'},{interaction:'place'},{skillType:'legendary'}]) expect(()=>view([{...zone,items:[{...item,...changes}]}])).toThrow();
+    expect(()=>view([{...zone,kind:'html'}])).toThrow();
+    const render=(turn:'white'|'black',onMove?:()=>void)=>renderToStaticMarkup(createElement(GameTable,{zones,project,turn,disabled:false,onSelect:()=>{},onMove,children:'board'}));
+    expect(render('white',()=>{})).not.toContain('disabled=""');
+    expect(render('white')).toContain('disabled=""');
+    expect(render('black',()=>{})).toContain('disabled=""');
+    expect(render('white',()=>{})).not.toContain('aria-pressed');
+  });
   it('renders inactive items as disabled, and makes no-zone games use their existing board layout',()=>{
     const html=renderToStaticMarkup(createElement(GameTable,{zones:[reserve],project,turn:'black',disabled:false,onSelect:()=>{},children:'board'}));
     expect(html).toContain('disabled=""');expect(html).toContain('数量 2');
