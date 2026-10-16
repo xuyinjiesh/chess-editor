@@ -10,7 +10,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  board: { rows: number; cols: number; pattern: 'checker' | 'grid' | 'cells' | 'xiangqi' | 'hex'; light: string; dark: string; coordinates: boolean; theme?: BoardTheme };
+  board: { rows: number; cols: number; pattern: 'checker' | 'grid' | 'cells' | 'xiangqi' | 'hex'; light: string; dark: string; coordinates: boolean; hexLayout?: 'offset' | 'rhombus'; theme?: BoardTheme };
   pieceTypes: PieceType[];
   pieces: Piece[];
   regions: Region[];
@@ -50,6 +50,7 @@ export function validateProject(input: unknown): Project {
   if (![b.rows, b.cols].every(n => Number.isInteger(n) && Number(n) >= 3 && Number(n) <= 24)) throw new Error('棋盘行列数需要在 3–24 之间。');
   if (!['checker', 'grid', 'cells', 'xiangqi', 'hex'].includes(String(b.pattern)) || !color(b.light) || !color(b.dark) || typeof b.coordinates !== 'boolean') throw new Error('棋盘样式无效。');
   if (b.pattern === 'xiangqi' && (b.rows !== 10 || b.cols !== 9)) throw new Error('中国象棋棋盘样式需要 9 列 × 10 行。');
+  if (b.hexLayout !== undefined && !['offset','rhombus'].includes(String(b.hexLayout))) throw new Error('六边形布局无效。');
   if (b.theme !== undefined && b.theme !== 'custom' && !BOARD_THEMES.some(t=>t.id===b.theme)) throw new Error('棋盘主题无效。');
   if (!Array.isArray(p.pieceTypes) || !p.pieceTypes.length || p.pieceTypes.length > 64) throw new Error('需要 1–64 种棋子。');
   const types = new Set<string>();
@@ -84,7 +85,7 @@ export function validateProject(input: unknown): Project {
   // Reconstruct only known fields. Imported files cannot inject arbitrary UI markup.
   return {
     version: 1, id: shortString(p.id) ? p.id : uid(), name: p.name, description: p.description,
-    board: {rows: Number(b.rows), cols: Number(b.cols), pattern: b.pattern as Project['board']['pattern'], light: String(b.light), dark: String(b.dark), coordinates: b.coordinates,...(b.theme!==undefined?{theme:b.theme as BoardTheme}:{})},
+    board: {rows: Number(b.rows), cols: Number(b.cols), pattern: b.pattern as Project['board']['pattern'], light: String(b.light), dark: String(b.dark), coordinates: b.coordinates,...(b.hexLayout!==undefined?{hexLayout:b.hexLayout as Project['board']['hexLayout']} : {}),...(b.theme!==undefined?{theme:b.theme as BoardTheme}:{})},
     pieceTypes: p.pieceTypes.map(t => ({id:t.id, name:t.name, symbol:t.symbol, ...(t.blackSymbol !== undefined ? {blackSymbol:t.blackSymbol} : {}), shape:t.shape,...(t.neutral !== undefined ? {neutral:t.neutral} : {})})),
     pieces: p.pieces.map(pc => ({id:pc.id, type:pc.type, side:pc.side, row:pc.row, col:pc.col})),
     regions: p.regions.map(r => ({id:r.id,name:r.name,color:r.color,tag:r.tag,cells:r.cells.map((c: Cell)=>({row:c.row,col:c.col}))})),

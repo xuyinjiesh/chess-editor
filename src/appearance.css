@@ -20,8 +20,8 @@
 .xiangqi-piece,.token{width:84%;height:84%;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle at 34% 26%,#fffdf8,#f2e9d8 64%,#ddcfb4);border:2px solid currentColor;color:#23262b;font-family:var(--piece-serif);font-size:46cqi;font-weight:700;line-height:1;text-shadow:none;box-shadow:0 2px 4px #00000038,inset 0 -2px 4px #00000014;filter:none;pointer-events:none}
 .xiangqi-piece.white{color:#b23a2e}.token.white{color:#2f6b63}.token.black{background:radial-gradient(circle at 34% 26%,#fffdf8,#f2e9d8 64%,#ddcfb4);border-color:currentColor;color:#23262b}
 .stone{width:84%;height:84%;border:0;background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#23262b;box-shadow:0 2px 5px #00000057,inset 0 -3px 6px #00000038}
-.stone.black{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#23262b;border:0}
-.stone.white{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),#f2ede2;border:0;box-shadow:inset 0 0 0 1px #0000002e,0 2px 5px #0000004d}
+.stone.black{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),var(--piece-black,#23262b);border:0}
+.stone.white{background:radial-gradient(circle at 33% 28%,#ffffff8c,#ffffff00 46%),var(--piece-white,#f2ede2);border:0;box-shadow:inset 0 0 0 1px #0000002e,0 2px 5px #0000004d}
 .board-surface[data-dark-board=true] .stone.black{box-shadow:0 0 0 1px #7b879a,0 2px 5px #00000057,inset 0 -3px 6px #00000038}
 .piece-sprite.is-selected .piece-body{filter:drop-shadow(0 4px 3px #00000033)}
 .piece-sprite.is-dragging .piece-body{filter:drop-shadow(0 10px 12px #00000059)}

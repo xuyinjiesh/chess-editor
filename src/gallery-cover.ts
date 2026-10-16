@@ -1,4 +1,4 @@
-import { boardMetrics, cellCenter, cellVertices } from './board-geometry.ts';
+import { hexBoundaryPath, boardMetrics, cellCenter, cellVertices } from './board-geometry.ts';
 import { boardAppearance, pieceLetterLayout } from './appearance.ts';
 import { tokenArtwork } from './piece-art.ts';
 import { pieceSymbol, type Project } from './model.ts';
@@ -27,7 +27,8 @@ export function galleryCover(project: Project): string {
   lines.push('<g transform="scale(.44)">');
   if (pattern === 'xiangqi') lines.push(`<rect x="50" y="450" width="800" height="100" fill="${river}" fill-opacity=".45"/><rect x="50" y="450" width="800" height="100" fill="url(#river-waves)" opacity=".4"/><g fill="${theme.text}" fill-opacity=".065"><rect x="350" y="50" width="200" height="200"/><rect x="350" y="750" width="200" height="200"/></g>`);
   for (const region of ['grid', 'cells', 'xiangqi', 'hex'].includes(pattern) ? project.regions : []) {
-    const { fill, outline } = regionGeometry(region.cells, rows, cols, false, pattern), kind = terrainKind(region);
+    if (pattern === 'hex' && /^hex-edge-(top|bottom|left|right)$/.test(region.tag)) { lines.push(`<path d="${hexBoundaryPath(project.board,region.tag.slice(9))}" fill="none" stroke="${region.color}" stroke-width="8" stroke-linecap="round"/>`); continue; }
+    const { fill, outline } = regionGeometry(region.cells, rows, cols, false, pattern, project.board.hexLayout), kind = terrainKind(region);
     lines.push(`<path d="${fill}" fill="${region.color}" fill-opacity="${kind === 'river' ? '.38' : '.14'}"/>`);
     if (kind !== 'region') lines.push(`<path d="${fill}" fill="url(#${kind === 'river' ? 'river-waves' : 'zone-hatch'})" opacity="${kind === 'river' ? '.4' : '.16'}"/>`);
     lines.push(`<path d="${outline}" fill="none" stroke="${region.color}" stroke-opacity=".6" stroke-width=".65" vector-effect="non-scaling-stroke"/>`);
@@ -55,7 +56,7 @@ export function galleryCover(project: Project): string {
     if (neutral && type.id === 'river-stone' && type.shape === 'token') {
       lines.push(`<g transform="translate(${x-16.94} ${y-16.94}) scale(.3388)"><path d="${rock}" transform="translate(0 3)" fill="#748977"/><path d="${rock}" fill="url(#rock-face)" stroke="#748977"/><path d="M50 38L61 50L50 62L39 50Z" fill="none" stroke="#4e6656" stroke-width="3" stroke-linejoin="round"/></g>`);
     } else if (type.shape === 'stone') {
-      lines.push(`<circle cx="${x}" cy="${y}" r="17" fill="${white ? '#fffdf4' : '#303730'}" stroke="${white ? '#9a927e' : '#141b17'}" stroke-width="1.5"/>`);
+      lines.push(`<circle cx="${x}" cy="${y}" r="17" fill="${project.ui.sideColors?.[piece.side] || (white ? '#fffdf4' : '#303730')}" stroke="${white ? '#9a927e' : '#141b17'}" stroke-width="1.5"/>`);
     } else if (type.shape === 'chess') {
       lines.push(`<text x="${x}" y="${y+1}" text-anchor="middle" dominant-baseline="central" font-family="'Segoe UI Symbol','Noto Sans Symbols 2',serif" font-size="35" fill="${white ? '#fffdf4' : '#202a23'}" stroke="#37372d" stroke-width=".5" paint-order="stroke">${escape(symbol)}</text>`);
     } else {

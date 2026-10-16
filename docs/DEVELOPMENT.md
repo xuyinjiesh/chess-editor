@@ -48,7 +48,7 @@ GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库
 
 ## 自定义规则协议
 
-`src/model.ts` 定义完整的 Project / GameState / Move 类型。坐标是从左上角开始的 0 基 `row` / `col`。`hex` 使用真正的蜂巢棋盘：正六边形尖顶，奇数行（row 为 1、3、5…）向右错开半格。项目继续保存 row / col，地形、棋子、拖放和封面共用同一套几何。翻转是整个棋盘旋转 180 度，逻辑坐标不变。
+`src/model.ts` 定义完整的 Project / GameState / Move 类型。坐标是从左上角开始的 0 基 `row` / `col`。`hex` 使用真正的蜂巢棋盘：正六边形尖顶。`board.hexLayout` 可选 `offset`（默认，奇数行向右错开半格）或 `rhombus`（菱形，每下一行向右半格，q = col、r = row；六贯棋使用此布局）。项目继续保存 row / col，地形、棋子、拖放和封面共用同一套几何。翻转是整个棋盘旋转 180 度，逻辑坐标不变。
 
 ### 通用棋盘拓扑
 
@@ -61,7 +61,7 @@ GitHub Pages 部署由 `.github/workflows/pages.yml` 完成。工作流按仓库
 | `distance(a, b)` | 无障碍最短步数；蜂巢立方坐标距离，方格切比雪夫距离 |
 | `step(cell, direction, steps = 1)` | 沿固定方向走指定步数；可返回越界格，须用 contains 检查 |
 | `ray(cell, direction)` | 从下一格开始沿直线返回棋盘内格子；不会因棋子或区域自动停止 |
-| `toAxial(cell)` / `fromAxial({q,r})` | odd-r 行列与轴坐标转换：q = col − floor(row / 2)，r = row |
+| `toAxial(cell)` / `fromAxial({q,r})` | offset：q = col − floor(row / 2)，r = row；rhombus：q = col，r = row |
 | `directionCount` / `axisCount` | 蜂巢为 6 / 3，方格为 8 / 4 |
 
 蜂巢方向 0–5 依次为东、东北、西北、西、西南、东南；方格方向 0–7 依次为东、东北、北、西北、西、西南、南、东南。方向属于逻辑棋盘，不受观看方向影响。距离不计算障碍物；寻路、越子、河流代价等由规则通过 neighbors 和区域标签实现。沿蜂巢直线走时不能固定递增 row / col，必须使用 step 或 ray。
@@ -197,3 +197,5 @@ server/relay.mjs    可选自托管 WebSocket 中继
 ```
 
 规则实现参照 [chess.js 文档](https://jhlywa.github.io/chess.js/)；WebRTC 通道参照 [PeerJS 文档](https://peerjs.com/client/getting-started)。
+
+六贯棋通过 `hex-edge-top/bottom/left/right` 区域标签标记整条目标边，颜色来自区域配置；标记跟随棋盘尺寸与翻转，SVG 封面同样保留。棋石支持 `ui.sideColors` 自定义颜色。

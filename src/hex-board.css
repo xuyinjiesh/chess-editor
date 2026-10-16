@@ -17,3 +17,6 @@
 .layout-preview.hex{display:grid;grid-template-columns:repeat(3,7px);grid-auto-rows:6px;gap:0;padding-top:2px}
 .layout-preview.hex i{width:7px;height:8px;border-radius:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 .layout-preview.hex i:nth-child(n+4):nth-child(-n+6){transform:translateX(3.5px)}
+.pattern-hex>.board-terrain{overflow:visible}
+.hex-goal-edge{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mini .hex-goal-edge{stroke-width:2}

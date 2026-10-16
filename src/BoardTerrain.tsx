@@ -1,6 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 import type { Project } from './model';
-import { boardMetrics, cellCenter } from './board-geometry';
+import { hexBoundaryPath, boardMetrics, cellCenter } from './board-geometry';
 import { footballPitchPath, hasFootballPitch, regionGeometry, terrainKind } from './terrain';
 
 export function BoardTerrain({ project, flipped }: { project: Project; flipped: boolean }) {
@@ -19,7 +19,8 @@ export function BoardTerrain({ project, flipped }: { project: Project; flipped: 
     </>}
     {hasFootballPitch(project) && <path d={footballPitchPath} className="football-pitch-lines"/>}
     {project.regions.map(region => {
-      const { fill, outline } = regionGeometry(region.cells, rows, cols, flipped, pattern), kind = terrainKind(region);
+      if (pattern === 'hex' && /^hex-edge-(top|bottom|left|right)$/.test(region.tag)) return <path key={region.id} className="hex-goal-edge" d={hexBoundaryPath(project.board, region.tag.slice(9), flipped)} stroke={region.color}/>;
+      const { fill, outline } = regionGeometry(region.cells, rows, cols, flipped, pattern, project.board.hexLayout), kind = terrainKind(region);
       const corner = kind === 'forbidden' ? region.cells.map(c => cellCenter(project.board,c,flipped)).sort((a,b)=>a.y-b.y||a.x-b.x)[0] : undefined;
       return <g key={region.id} className={`terrain-zone terrain-${kind}`} style={{ '--region-color': region.color } as CSSProperties}>
         <path className="terrain-fill" d={fill}/>

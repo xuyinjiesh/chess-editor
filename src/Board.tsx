@@ -28,9 +28,9 @@ export function PieceIcon({type,side='white',symbol,shape='chess'}:{type:string;
 
 // Draw shared lines once, terminating at the outermost playable intersections.
 // Cell-centered games instead place their grid on the boundaries of each cell.
-function BoardLines({rows,cols,pattern,flipped=false}:{rows:number;cols:number;pattern:Project['board']['pattern'];flipped?:boolean}){
+function BoardLines({rows,cols,pattern,hexLayout,flipped=false}:{rows:number;cols:number;pattern:Project['board']['pattern'];hexLayout?:Project['board']['hexLayout'];flipped?:boolean}){
   if(pattern==='hex'){
-    const board={rows,cols,pattern},m=boardMetrics(board);
+    const board={rows,cols,pattern,hexLayout},m=boardMetrics(board);
     return <svg className="board-lines hex-lines" viewBox={`0 0 ${m.width} ${m.height}`} aria-hidden="true"><path d={hexGridPath(board,flipped)}/></svg>;
   }
   if(!['grid','cells','xiangqi'].includes(pattern))return null;
@@ -85,7 +85,7 @@ export function Board({project,pieces,selected,hints=[],markers=[],pending=false
     setExits(old=>[...old.filter(p=>!pieces.some(n=>n.id===p.id)),...removed.filter(p=>!old.some(n=>n.id===p.id))]);
     const timer=setTimeout(()=>setExits([]),220);return()=>clearTimeout(timer);
   },[pieces]);
-  useEffect(()=>{gesture.current=undefined;setDrag(undefined);},[flipped,rows,cols,pattern,tool]);
+  useEffect(()=>{gesture.current=undefined;setDrag(undefined);},[flipped,rows,cols,pattern,project.board.hexLayout,tool]);
   useEffect(()=>{if(gesture.current){gesture.current=undefined;setDrag(undefined);}},[pieces]);
   function point(event:PointerEvent<HTMLDivElement>){
     if(hex){
@@ -124,7 +124,7 @@ export function Board({project,pieces,selected,hints=[],markers=[],pending=false
     {coordinates&&!mini&&<div className="rank-labels">{rowList.map(r=><span key={r} style={hex?{top:`${cellCenter(project.board,{row:r,col:0},flipped).y/metrics.height*100}%`}:undefined}>{rows-r}</span>)}</div>}
     <div className="board-surface" data-board-theme={appearance.id} data-dark-board={appearance.id==='midnight'||appearance.id==='nebula'||(appearance.id==='custom'&&appearance.text==='#b9c4d2')} style={{'--frame-a':appearance.frameA,'--frame-b':appearance.frameB,'--board-line':appearance.line,'--board-text':appearance.text} as CSSProperties}><div ref={board} className={`board pattern-${pattern} tool-${tool} ${drag?'is-dragging':''}`} role={mini?undefined:'grid'} aria-busy={pending||undefined} inert={pending} aria-label={mini?undefined:`${project.name}棋盘`} style={{'--rows':rows,'--cols':cols,'--light':light,'--dark':dark,aspectRatio:`${metrics.width} / ${metrics.height}`} as CSSProperties} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={e=>pointerEnd(e)} onPointerCancel={e=>pointerEnd(e,true)} onLostPointerCapture={()=>{gesture.current=undefined;setDrag(undefined);}}>
       <BoardTerrain project={project} flipped={flipped}/>
-      <BoardLines rows={rows} cols={cols} pattern={pattern} flipped={flipped}/>
+      <BoardLines rows={rows} cols={cols} pattern={pattern} hexLayout={project.board.hexLayout} flipped={flipped}/>
       {rowList.flatMap(row=>colList.map(col=>{
         const cell={row,col},piece=pieces.find(p=>sameCell(p,cell)),definition=piece&&project.pieceTypes.find(t=>t.id===piece.type),regions=project.regions.filter(r=>r.cells.some(c=>sameCell(c,cell)));
         const legacyRegions=pattern==='checker'?regions:[];

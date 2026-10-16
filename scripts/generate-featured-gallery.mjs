@@ -7,6 +7,7 @@ import { validateCatalog } from '../src/gallery-format.ts';
 import { originalGames } from './original-games.mjs';
 import { incidentGame } from './incident-game.mjs';
 import { intransitiveGame } from './intransitive-game.mjs';
+import { hexGame } from './hex-game.mjs';
 
 // Explicit maintenance command for curated games; never runs on build.
 // Existing unrelated publications and older revisions are preserved.
@@ -24,6 +25,7 @@ for (const side of ['white','black']) {
 }
 for (let col=0;col<6;col++) miniPieces.push({id:'river-'+col,type:'river-stone',side:'black',row:3,col});
 const games = [
+  await hexGame(root),
   await intransitiveGame(root),
   await incidentGame(root),
   ...await originalGames(root),
@@ -51,4 +53,4 @@ for (const game of games) {
   await writeFile(resolve(folder,'cover.svg'),galleryCover(project));
 }
 await writeFile(catalogPath,JSON.stringify(validateCatalog({...current,entries}),null,2)+'\n');
-console.log('已更新石头剪刀布棋、异变象棋、足球棋、角斗棋、迷你永恒棋、震棋、形意棋的 v1 快照与署名。');
+console.log('已更新六贯棋、石头剪刀布棋、异变象棋、足球棋、角斗棋、迷你永恒棋、震棋、形意棋的 v1 快照与署名。');

@@ -1,17 +1,17 @@
 import type { Cell, Project } from './model.ts';
 
-type Board = Pick<Project['board'], 'rows' | 'cols' | 'pattern'>;
+type Board = Pick<Project['board'], 'rows' | 'cols' | 'pattern' | 'hexLayout'>;
 export type Point = { x: number; y: number };
 
 // Self-contained: this exact factory is also serialized into isolated rule workers.
-// Pointy-top odd-r hexes keep portable row/col coordinates; axial coordinates
-// make a direction stay straight when it crosses an odd/even row boundary.
+// Pointy-top hexes retain row/col coordinates: odd-r by default, axial r/q
+// for rhombi. This mapping is shared by rendering, input and rule workers.
 export function createBoardTopology(board: Board) {
-  const { rows, cols, pattern } = board, hex = pattern === 'hex';
+  const { rows, cols, pattern } = board, hex = pattern === 'hex', rhombus = board.hexLayout === 'rhombus';
   const directions = hex ? [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]] : [[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1],[0,1],[1,1]];
   const contains = (c: Cell) => !!c && Number.isInteger(c.row) && Number.isInteger(c.col) && c.row >= 0 && c.row < rows && c.col >= 0 && c.col < cols;
-  const toAxial = (c: Cell) => ({ q: c.col - Math.floor(c.row / 2), r: c.row });
-  const fromAxial = (c: { q: number; r: number }): Cell => ({ row: c.r + 0, col: c.q + Math.floor(c.r / 2) + 0 });
+  const toAxial = (c: Cell) => ({ q: c.col - (rhombus ? 0 : Math.floor(c.row / 2)), r: c.row });
+  const fromAxial = (c: { q: number; r: number }): Cell => ({ row: c.r + 0, col: c.q + (rhombus ? 0 : Math.floor(c.r / 2)) + 0 });
   function step(cell: Cell, direction: number, steps = 1): Cell {
     if (!Number.isInteger(direction) || direction < 0 || direction >= directions.length || !Number.isInteger(steps)) throw new Error('无效的棋盘方向或步数。');
     const [dq, dr] = directions[direction];
@@ -36,12 +36,12 @@ export type BoardTopology = ReturnType<typeof createBoardTopology>;
 
 export function boardMetrics(board: Board) {
   const hex = board.pattern === 'hex', cellWidth = 100, cellHeight = hex ? 200 / Math.sqrt(3) : 100;
-  return { cellWidth, cellHeight, width: board.cols * 100 + (hex && board.rows > 1 ? 50 : 0), height: hex ? (board.rows - 1) * cellHeight * .75 + cellHeight : board.rows * 100 };
+  return { cellWidth, cellHeight, width: board.cols * 100 + (hex ? (board.hexLayout === 'rhombus' ? board.rows - 1 : Number(board.rows > 1)) * 50 : 0), height: hex ? (board.rows - 1) * cellHeight * .75 + cellHeight : board.rows * 100 };
 }
 
 export function cellCenter(board: Board, cell: Cell, flipped = false): Point {
   const m = boardMetrics(board), hex = board.pattern === 'hex';
-  const x = (cell.col + .5 + (hex ? (cell.row & 1) * .5 : 0)) * 100;
+  const x = (cell.col + .5 + (hex ? (board.hexLayout === 'rhombus' ? cell.row : cell.row & 1) * .5 : 0)) * 100;
   const y = (cell.row * (hex ? .75 : 1) + .5) * m.cellHeight;
   // Rotate the actual geometry, not offset coordinates (which changes parity).
   return flipped ? { x: m.width - x, y: m.height - y } : { x, y };
@@ -97,6 +97,31 @@ export function hexGridPath(board: Board, flipped = false) {
     for (let edge = 0; edge < 6; edge++) {
       const neighbor = topology.step(cell, [1,0,5,4,3,2][edge]);
       if (topology.contains(neighbor) && (neighbor.row < row || neighbor.row === row && neighbor.col < col)) continue;
+      const a = vertices[edge], b = vertices[(edge+1)%6];
+      path += `M${a.x} ${a.y}L${b.x} ${b.y}`;
+    }
+  }
+  return path;
+}
+
+// Four independently colored boundaries, including both goals at each corner.
+// Region tags hex-edge-{top,bottom,left,right} opt into these portable markings.
+export function hexBoundaryCells(board: Board, side: string): Cell[] {
+  if (side === 'top' || side === 'bottom') return Array.from({length:board.cols},(_,col)=>({row:side==='top'?0:board.rows-1,col}));
+  if (side === 'left' || side === 'right') return Array.from({length:board.rows},(_,row)=>({row,col:side==='left'?0:board.cols-1}));
+  return [];
+}
+
+export function hexBoundaryPath(board: Board, side: string, flipped = false) {
+  if (board.pattern !== 'hex') return '';
+  const topology = createBoardTopology(board);
+  let path = '';
+  for (let row = 0; row < board.rows; row++) for (let col = 0; col < board.cols; col++) {
+    const cell = { row, col }, vertices = cellVertices(board, cell, flipped);
+    for (let edge = 0; edge < 6; edge++) {
+      const n = topology.step(cell, [1,0,5,4,3,2][edge]);
+      const boundary = n.row < 0 ? 'top' : n.row >= board.rows ? 'bottom' : n.col < 0 ? 'left' : n.col >= board.cols ? 'right' : '';
+      if (boundary !== side) continue;
       const a = vertices[edge], b = vertices[(edge+1)%6];
       path += `M${a.x} ${a.y}L${b.x} ${b.y}`;
     }

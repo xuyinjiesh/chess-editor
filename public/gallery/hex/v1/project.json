@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "id": "hex",
+  "name": "六贯棋 · Hex",
+  "description": "在菱形蜂巢棋盘上，用相邻的同色棋子连通两条对边。红方连上下红边，蓝方连左右蓝边；路径可以转弯。含第二手交换首子规则。",
+  "board": {
+    "rows": 11,
+    "cols": 11,
+    "pattern": "hex",
+    "light": "#eee7d6",
+    "dark": "#eee7d6",
+    "coordinates": true,
+    "hexLayout": "rhombus",
+    "theme": "custom"
+  },
+  "pieceTypes": [
+    {
+      "id": "stone",
+      "name": "棋石",
+      "symbol": "●",
+      "shape": "stone"
+    }
+  ],
+  "pieces": [],
+  "regions": [
+    {
+      "id": "hex-top",
+      "name": "红方 · 上边",
+      "color": "#b94c47",
+      "tag": "hex-edge-top",
+      "cells": [
+        {
+          "row": 0,
+          "col": 0
+        },
+        {
+          "row": 0,
+          "col": 1
+        },
+        {
+          "row": 0,
+          "col": 2
+        },
+        {
+          "row": 0,
+          "col": 3
+        },
+        {
+          "row": 0,
+          "col": 4
+        },
+        {
+          "row": 0,
+          "col": 5
+        },
+        {
+          "row": 0,
+          "col": 6
+        },
+        {
+          "row": 0,
+          "col": 7
+        },
+        {
+          "row": 0,
+          "col": 8
+        },
+        {
+          "row": 0,
+          "col": 9
+        },
+        {
+          "row": 0,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "id": "hex-bottom",
+      "name": "红方 · 下边",
+      "color": "#b94c47",
+      "tag": "hex-edge-bottom",
+      "cells": [
+        {
+          "row": 10,
+          "col": 0
+        },
+        {
+          "row": 10,
+          "col": 1
+        },
+        {
+          "row": 10,
+          "col": 2
+        },
+        {
+          "row": 10,
+          "col": 3
+        },
+        {
+          "row": 10,
+          "col": 4
+        },
+        {
+          "row": 10,
+          "col": 5
+        },
+        {
+          "row": 10,
+          "col": 6
+        },
+        {
+          "row": 10,
+          "col": 7
+        },
+        {
+          "row": 10,
+          "col": 8
+        },
+        {
+          "row": 10,
+          "col": 9
+        },
+        {
+          "row": 10,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "id": "hex-left",
+      "name": "蓝方 · 左边",
+      "color": "#367ba8",
+      "tag": "hex-edge-left",
+      "cells": [
+        {
+          "row": 0,
+          "col": 0
+        },
+        {
+          "row": 1,
+          "col": 0
+        },
+        {
+          "row": 2,
+          "col": 0
+        },
+        {
+          "row": 3,
+          "col": 0
+        },
+        {
+          "row": 4,
+          "col": 0
+        },
+        {
+          "row": 5,
+          "col": 0
+        },
+        {
+          "row": 6,
+          "col": 0
+        },
+        {
+          "row": 7,
+          "col": 0
+        },
+        {
+          "row": 8,
+          "col": 0
+        },
+        {
+          "row": 9,
+          "col": 0
+        },
+        {
+          "row": 10,
+          "col": 0
+        }
+      ]
+    },
+    {
+      "id": "hex-right",
+      "name": "蓝方 · 右边",
+      "color": "#367ba8",
+      "tag": "hex-edge-right",
+      "cells": [
+        {
+          "row": 0,
+          "col": 10
+        },
+        {
+          "row": 1,
+          "col": 10
+        },
+        {
+          "row": 2,
+          "col": 10
+        },
+        {
+          "row": 3,
+          "col": 10
+        },
+        {
+          "row": 4,
+          "col": 10
+        },
+        {
+          "row": 5,
+          "col": 10
+        },
+        {
+          "row": 6,
+          "col": 10
+        },
+        {
+          "row": 7,
+          "col": 10
+        },
+        {
+          "row": 8,
+          "col": 10
+        },
+        {
+          "row": 9,
+          "col": 10
+        },
+        {
+          "row": 10,
+          "col": 10
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "engine": "custom",
+    "code": "// Hex: red (white) connects rows; blue (black) connects columns.\n// All adjacency comes from the same axial rhombus topology as the renderer.\nfunction hexError(project) {\n  if (project.board.pattern !== 'hex' || project.board.hexLayout !== 'rhombus' || project.board.rows !== project.board.cols) return '六贯棋需要行列数相同的菱形六边形棋盘。';\n  if (project.rules.firstTurn !== 'white') return '六贯棋请设置红方先手。';\n  if (!project.pieceTypes.some(t => t.id === 'stone' && !t.neutral)) return '六贯棋需要 ID 为 stone 的非中立棋石。';\n  return '';\n}\nlet hexCachedGraph;\nfunction hexGraph(project) {\n  const n = project.board.rows;\n  if (!hexCachedGraph || hexCachedGraph.n !== n) {\n    const cells = Array.from({length:n*n},(_,i)=>({row:Math.floor(i/n),col:i%n}));\n    hexCachedGraph = {n,cells,neighbors:cells.map(c=>boardTopology.neighbors(c).map(a=>a.row*n+a.col))};\n  }\n  return hexCachedGraph;\n}\nfunction hexPosition(pieces,graph) {\n  const occupied = new Uint8Array(graph.n*graph.n);\n  for (const p of pieces) occupied[p.row*graph.n+p.col] = p.side === 'white' ? 1 : 2;\n  return occupied;\n}\nfunction hexPath(occupied,side,graph) {\n  const {n,neighbors,cells} = graph, own = side === 'white' ? 1 : 2;\n  const previous = new Int32Array(n*n).fill(-2), queue = [];\n  for (let i=0;i<n;i++) {\n    const start = side === 'white' ? i : i*n;\n    if (occupied[start] === own) { previous[start] = -1; queue.push(start); }\n  }\n  for (let head=0;head<queue.length;head++) {\n    const at = queue[head];\n    if (side === 'white' ? Math.floor(at/n) === n-1 : at%n === n-1) {\n      const path = [];\n      for (let cur=at;cur>=0;cur=previous[cur]) path.push({...cells[cur]});\n      return path.reverse();\n    }\n    for (const next of neighbors[at]) if (occupied[next] === own && previous[next] === -2) {\n      previous[next] = at; queue.push(next);\n    }\n  }\n  return [];\n}\nfunction hexCanSwap(state) {\n  return !state.winner && state.data.hexPly === 1 && state.turn === 'black' && state.pieces.length === 1 && state.pieces[0].side === 'white';\n}\nfunction onMove(state,move,project) {\n  const fail = message => ({valid:false,message}), error = hexError(project);\n  if (error) return fail(error);\n  if (state.winner) return fail('本局已经结束。');\n  if (move.from || move.promotion || !boardTopology.contains(move.to)) return fail('请在空格放置棋石，落定的棋石不能移动。');\n  const ply = Number.isInteger(state.data.hexPly) ? state.data.hexPly : state.history.length;\n  if (move.action === 'swap') {\n    const first = state.pieces[0];\n    if (!hexCanSwap(state) || first.row !== move.to.row || first.col !== move.to.col) return fail('只有第二手可以交换首子。');\n    const stone = {...first,side:'black',row:first.col,col:first.row};\n    return {valid:true,pieces:[stone],turn:'white',winner:null,data:{...state.data,hexPly:2,hexPath:[]},message:'蓝方交换首子：改为蓝色并对调行列，轮到红方。'};\n  }\n  if (move.action) return fail('未知的六贯棋操作。');\n  if (state.pieces.some(p=>p.row===move.to.row && p.col===move.to.col)) return fail('这个格子已有棋石。');\n  let id = 'hex-'+ply+'-'+move.to.row+'-'+move.to.col;\n  while (state.pieces.some(p=>p.id===id)) id += '-s';\n  const pieces = [...state.pieces.map(p=>({...p})),{id,type:'stone',side:state.turn,row:move.to.row,col:move.to.col}];\n  const graph = hexGraph(project), path = hexPath(hexPosition(pieces,graph),state.turn,graph);\n  const label = state.turn === 'white' ? '红方' : '蓝方', coordinate = String.fromCharCode(97+move.to.col)+(project.board.rows-move.to.row);\n  return {valid:true,pieces,turn:state.turn==='white'?'black':'white',winner:path.length?state.turn:null,data:{...state.data,hexPly:ply+1,hexPath:path},message:label+'落子 '+coordinate+(path.length?'，连通两条对边获胜。':'')};\n}\nfunction getLegalMoves(state,project) {\n  if (state.winner || hexError(project)) return [];\n  const graph = hexGraph(project), occupied = hexPosition(state.pieces,graph), center = (graph.n-1)/2;\n  // Prioritize immediate wins/blocks and nearby play, while exposing EVERY empty\n  // cell. No pruning here: these moves also drive UI, replay and bot validation.\n  const own = state.turn === 'white' ? 1 : 2, opponent = own === 1 ? 2 : 1;\n  const moves = graph.cells.flatMap((to,index)=>{\n    if (occupied[index]) return [];\n    occupied[index] = own;\n    const win = hexPath(occupied,state.turn,graph).length > 0;\n    occupied[index] = opponent;\n    const block = hexPath(occupied,state.turn==='white'?'black':'white',graph).length > 0;\n    occupied[index] = 0;\n    const priority = (win?100000:0)+(block?50000:0)+graph.neighbors[index].filter(i=>occupied[i]).length*3-Math.abs(to.row-center)-Math.abs(to.col-center);\n    return [{move:{to:{...to}},priority}];\n  }).sort((a,b)=>b.priority-a.priority).map(item=>item.move);\n  if (hexCanSwap(state)) moves.unshift({action:'swap',to:{row:state.pieces[0].row,col:state.pieces[0].col}});\n  return moves;\n}\n// 0–1 shortest paths: own stones cost zero, empty hexes one, enemies block.\n// The bot compares how many placements each side still needs to connect.\nfunction hexCost(occupied,side,graph) {\n  const {n,neighbors} = graph, own = side === 'white' ? 1 : 2, enemy = own === 1 ? 2 : 1;\n  const distance = new Int32Array(n*n).fill(n*n+1), queue = new Map();\n  let head = 0, tail = 0;\n  for (let i=0;i<n;i++) {\n    const at = side === 'white' ? i : i*n;\n    if (occupied[at] === enemy) continue;\n    distance[at] = occupied[at] === own ? 0 : 1;\n    if (distance[at]===0) queue.set(--head,at); else queue.set(tail++,at);\n  }\n  while (head<tail) {\n    const at = queue.get(head); queue.delete(head++);\n    for (const next of neighbors[at]) {\n      if (occupied[next] === enemy) continue;\n      const cost = occupied[next] === own ? 0 : 1, nextDistance = distance[at]+cost;\n      if (nextDistance >= distance[next]) continue;\n      distance[next] = nextDistance;\n      if (cost===0) queue.set(--head,next); else queue.set(tail++,next);\n    }\n  }\n  let best = n*n+1;\n  for (let i=0;i<n;i++) best = Math.min(best,distance[side==='white'?(n-1)*n+i:i*n+n-1]);\n  return best;\n}\nfunction evaluate(state,side,project) {\n  if (state.winner) return state.winner === side ? 100000 : -100000;\n  if (hexError(project)) return 0;\n  const graph = hexGraph(project), position = hexPosition(state.pieces,graph), opponent = side==='white'?'black':'white';\n  const own = hexCost(position,side,graph), enemy = hexCost(position,opponent,graph);\n  const center = (graph.n-1)/2;\n  let score = (enemy-own)*100;\n  if (own===1 && state.turn===side) score += 10000;\n  if (enemy===1 && state.turn===opponent) score -= 10000;\n  for (const p of state.pieces) score += (p.side===side?1:-1)*(graph.n-Math.abs(p.row-center)-Math.abs(p.col-center));\n  return score;\n}\nfunction getGameView(state,project) {\n  const error = hexError(project);\n  if (error) return {message:error,interaction:'place'};\n  const path = state.winner ? hexPath(hexPosition(state.pieces,hexGraph(project)),state.winner,hexGraph(project)) : [];\n  return {\n    interaction:'place',\n    message:state.winner ? (state.winner==='white'?'红方':'蓝方')+'已连通两条对边。标有「连」的棋石组成获胜路径。' : (state.turn==='white'?'红方：连接上下两条红边。':'蓝方：连接左右两条蓝边。')+'点击空格落子，六个共边方向相连；路径可以转弯。'+(hexCanSwap(state)?'第二手可选择交换首子。':''),\n    actions:hexCanSwap(state)?[{label:'交换首子',description:'把首子改为蓝色并对调行列，随后轮到红方。仅第二手可用。',move:{action:'swap',to:{row:state.pieces[0].row,col:state.pieces[0].col}}}]:[],\n    markers:path.map(cell=>({cell,label:'连'})),\n  };\n}\n",
+    "winLength": 3,
+    "firstTurn": "white"
+  },
+  "ui": {
+    "accent": "#a45143",
+    "showHints": false,
+    "showHistory": true,
+    "sideLabels": {
+      "white": "红方",
+      "black": "蓝方"
+    },
+    "sideColors": {
+      "white": "#b94c47",
+      "black": "#367ba8"
+    }
+  }
+}

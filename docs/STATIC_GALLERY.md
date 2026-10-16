@@ -55,7 +55,7 @@ public/gallery/
 
 清单最多包含 1,000 个发布版本，文件上限为 8 MB；单个设计 JSON 不超过 500 KB。标签最多 6 个，玩法说明最多 6,000 字。
 
-当前展示「异变象棋」「足球棋」「角斗棋」「迷你永恒棋」「震棋」「形意棋 · Onitama」与「石头剪刀布棋 · Intransitive」，已替换原有三款示例。将 `entries` 设为 `[]` 可以保留一个空广场。
+当前展示「六贯棋 · Hex」「异变象棋」「足球棋」「角斗棋」「迷你永恒棋」「震棋」「形意棋 · Onitama」与「石头剪刀布棋 · Intransitive」，已替换原有三款示例。将 `entries` 设为 `[]` 可以保留一个空广场。
 
 足球棋和角斗棋由本站作者 xuyinjie 原创，资料在 `scripts/original-games.mjs`，根据作者的 `chess-room` 实现移植。足球棋使用 15 × 23 球场，支持角色差异化移动、持球、邻格抢球、传射、蓄力折线球和日字连跳。作者确认带球入门同样获胜；球员可走到底线两侧格，足球不能直接踢入这些格。角斗棋使用 3 × 3 空盘，每方十六枚储备、最多同时上场三子；作者确认禁中心只限全局第一手，将可留在储备，将、兵和士可按专属走法吃子。完整玩法见各作品详情。
 
@@ -69,7 +69,9 @@ public/gallery/
 
 石头剪刀布棋（Intransitive / RPS2）由 webgoatguy 设计，依据视频所附 Meaf 试玩网站核对规则，资料在 `scripts/intransitive-game.mjs`。采用 9 × 9 固定阵型，双方各有 3 石、4 布、3 剪，蓝方先手。八向一步、相克吃子，攻入对角敌方基地、全歼或困毙获胜；沿用参考网站电脑对弈版连续 200 手未吃子和棋的规则。计数保存在 `data.quietPlies`，随悔棋和重做恢复。
 
-七款规则代码位于 `scripts/rules/`，完整代码随静态项目 JSON 下载和复制。`npm run gallery:featured` 可重新生成开发中的 v1 快照、目录资料及自绘 SVG 封面；此命令只用于维护这七个开发快照，公开版本的更新仍应增加版本号，使用常规发布流程。它保留无关作品与这七款作品的较新版本。
+- **六贯棋 · Hex**：11 × 11 菱形蜂巢棋盘，红连上下、蓝连左右，六方向连通胜负与路径标记；含第二手交换首子（换色并对调行列），支持本机双人、电脑、撤销重做与复制编辑。来源为中文维基百科和 Matthew Seymour 的 Hex 规则说明。
+
+八款规则代码位于 `scripts/rules/`，完整代码随静态项目 JSON 下载和复制。`npm run gallery:featured` 可重新生成开发中的 v1 快照、目录资料及自绘 SVG 封面；此命令只用于维护这八个开发快照，公开版本的更新仍应增加版本号，使用常规发布流程。它保留无关作品与这八款作品的较新版本。
 
 清单可选字段 `credits` 为来源与权利说明，`sources` 为最多六个 `{label,url}` HTTP(S) 链接。详情页分别显示数字实现、规则作者／视频介绍者和来源。迷你永恒棋原规则署名日出333；震棋仅核实到视频介绍者日出333，未推断其为规则发明者；形意棋署名 Shimpei Sato，链接 Arcane Wonders 的官方规则书。当前未取得公开授权证明，署名不能替代授权。作品名称、规则及资料的权利归属以原权利人声明为准。本项目自行生成封面，没有复用原站图片或视频素材。
 
@@ -99,6 +101,7 @@ npm run preview -- --base=/chess-editor/ --port 4174
 
 ```sh
 node scripts/test-gallery-browser.mjs
+node scripts/test-hex-game-browser.mjs
 node scripts/test-onitama-browser.mjs
 node scripts/test-game-zones-browser.mjs
 node scripts/test-original-games-browser.mjs
