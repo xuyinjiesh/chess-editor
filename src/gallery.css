@@ -1,5 +1,6 @@
 .top-nav{gap:24px}.top-nav>button{white-space:nowrap}
 .gallery-open>.app-footer{display:none}
+.gallery-player-top>.button{white-space:nowrap;flex-shrink:0}.gallery-player-top>.text-button{white-space:nowrap}
 .gallery-page{flex:1;min-height:0;overflow:auto;padding:38px max(32px,calc((100vw - 1120px)/2)) 42px;background:var(--surface);color:var(--text-primary)}
 .gallery-page a{text-decoration:none;color:inherit}.gallery-page .button{font-size:12px;min-height:40px}.gallery-page .text-button{font-size:12px;color:var(--accent)}
 .gallery-page h1,.gallery-page h2,.gallery-page h3{font-weight:550}.gallery-page input,.gallery-page select{font-size:12px}
@@ -25,3 +26,28 @@
 @media(max-width:850px){.top-nav{gap:15px}.top-nav>button{font-size:10px}.brand{width:165px}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-hero h1{font-size:35px}.gallery-hero-side{padding:0 10px}.gallery-detail-grid{gap:24px}.gallery-detail-preview{padding:22px;min-height:300px}.gallery-detail-intro h1{font-size:28px}.gallery-player-layout{grid-template-columns:minmax(0,1fr) 245px}.gallery-play-info{padding-left:20px}.gallery-play-toolbar .button{padding:9px;font-size:11px}}
 @media(max-width:720px){.app-header{gap:12px}.brand{width:auto;flex-shrink:0}.brand>span:nth-child(2){font-size:17px}.brand .beta{display:none}.top-nav{gap:14px;flex:1;justify-content:center}.top-nav>button,.top-nav>button.bot-nav{font-size:0;gap:0;min-width:24px}.top-nav button:first-child{display:flex}.top-nav>button svg{width:17px;height:17px}.header-end{gap:0}.gallery-page{flex:none;overflow:visible;padding:22px}.gallery-hero{padding:12px 0 24px;gap:12px}.gallery-hero h1{font-size:30px;letter-spacing:2px}.gallery-hero p{font-size:11px}.gallery-hero-side{padding:0}.gallery-hero-mark{font-size:75px}.gallery-hero-side>span:last-child{font-size:8px}.gallery-eyebrow{font-size:8px;letter-spacing:1px}.gallery-toolbar{flex-wrap:wrap;gap:12px;margin:22px 0}.gallery-search{flex-basis:100%;max-width:none}.gallery-filter{font-size:10px}.gallery-card-cover{height:190px;padding:17px}.gallery-card-content{padding:17px}.gallery-card h3{font-size:17px}.gallery-card-meta{font-size:8px;gap:6px;flex-wrap:wrap}.gallery-detail-grid{grid-template-columns:1fr;gap:25px}.gallery-detail-preview{min-height:260px;max-height:400px;padding:28px}.gallery-detail-preview .board-frame{max-width:300px}.gallery-detail-intro h1{font-size:28px}.gallery-detail-summary{font-size:12px}.gallery-rules{margin-top:28px;padding-top:24px}.gallery-rules p{font-size:12px}.gallery-player-top{flex-wrap:wrap;gap:0}.gallery-player-top>span{font-size:9px}.gallery-player-layout{grid-template-columns:1fr;gap:12px}.gallery-play-info{padding:22px 0 0;border-left:0;border-top:1px solid var(--line)}.gallery-play-info h2{font-size:20px}.gallery-play-toolbar .button{padding:10px 14px}.gallery-moves{max-height:250px}.publish-body{grid-template-columns:1fr;padding:20px;gap:20px}.publish-preview{display:none}.publish-row{grid-template-columns:1.5fr 1fr}.publish-fields .field-label{font-size:12px}.gallery-about{margin-top:25px}.gallery-results{margin-top:22px}}
 @media(max-width:480px){.gallery-grid{grid-template-columns:1fr;gap:22px}.gallery-card-cover{height:245px;padding:25px}.gallery-card-content{padding:21px}.gallery-hero-side{display:none}.gallery-hero h1{font-size:32px}.gallery-card-meta{font-size:10px}.app-header{padding-inline:12px;gap:8px}.brand>span:nth-child(2){font-size:15px}.brand{gap:7px}.brand-icon{width:26px;height:29px}.top-nav{gap:8px}.header-end .theme-toggle{width:28px}.gallery-page{padding:20px 18px 30px}.gallery-play-toolbar{gap:7px}.gallery-play-toolbar .button{padding:9px 11px}}
+
+/* The same layout also fills the viewport when native fullscreen is unavailable. */
+.gallery-player.gallery-fullscreen{position:fixed;inset:0;z-index:40;width:100%;height:100dvh;padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.gallery-fullscreen .gallery-player-top{flex-shrink:0;margin-bottom:12px;gap:12px}
+.gallery-fullscreen .gallery-player-layout{flex:1;min-height:0;max-width:none;width:100%;grid-template-columns:minmax(0,1fr) 260px;gap:28px}
+.gallery-fullscreen .gallery-play-board{min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overscroll-behavior:contain;scrollbar-width:thin}
+.gallery-fullscreen .gallery-play-board>*{flex-shrink:0}
+.gallery-fullscreen .gallery-play-board>.board-frame,.gallery-fullscreen .gallery-play-board .game-table{width:var(--gallery-table-width,100%);max-width:100%;margin:0 auto}
+.gallery-fullscreen .game-table.with-skill-zones .game-table-board{max-width:none}
+.gallery-fullscreen .gallery-play-board>.custom-rule-panel{width:100%}
+.gallery-fullscreen .gallery-turn{margin:6px 0 14px}
+.gallery-fullscreen .gallery-play-toolbar{flex-wrap:wrap;margin:14px 0 4px;position:sticky;bottom:0;z-index:3;background:var(--surface);padding:4px 0}
+.gallery-fullscreen .gallery-play-info{min-height:0;overflow:auto;overscroll-behavior:contain;padding-top:8px}
+.gallery-fullscreen .gallery-moves{max-height:none}
+@media(max-width:720px){
+  .gallery-player-top>span{display:none}.gallery-player-top{gap:10px;justify-content:space-between}
+  .gallery-player.gallery-fullscreen{padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+  .gallery-fullscreen .gallery-player-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:12px}
+  .gallery-fullscreen .gallery-play-info{max-height:150px;padding:12px 0 0;border-left:0;border-top:1px solid var(--line)}
+  .gallery-fullscreen .gallery-play-info h2{font-size:18px}.gallery-fullscreen .gallery-step-count{margin:8px 0 12px}
+}
+@media(max-height:500px) and (min-aspect-ratio:6/5){
+  .gallery-fullscreen .gallery-player-layout{grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:minmax(0,1fr);gap:18px}
+  .gallery-fullscreen .gallery-play-info{max-height:none;border-top:0;border-left:1px solid var(--line);padding:8px 0 0 16px}
+}

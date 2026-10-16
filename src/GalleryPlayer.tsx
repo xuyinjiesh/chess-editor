@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, RotateCcw, Undo2, Redo2 } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Undo2, Redo2, Maximize, Minimize } from 'lucide-react';
 import { CustomRulePanel, useCustomPlay } from './custom-play';
 import { Board, PieceIcon } from './Board';
 import { playBoardSound, playMoveSound } from './board-audio';
@@ -19,14 +19,79 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
   const [options, setOptions] = useState(initialBot), [paused, setPaused] = useState(false), [thinking, setThinking] = useState(false);
   const [stats, setStats] = useState<SearchResult | null>(null), [error, setError] = useState('');
   const [settings, setSettings] = useState(false), [promotion, setPromotion] = useState<Move | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
   const current = useRef(state), revision = useRef(0), pending = useRef<AbortController | null>(null), search = useRef<AbortController | null>(null);
   const past = useRef<GameState[]>([]), future = useRef<GameState[]>([]);
   const section = useRef<HTMLElement>(null);
+  const playArea = useRef<HTMLDivElement>(null), fullscreenButton = useRef<HTMLButtonElement>(null), nativeFullscreen = useRef(false);
   useLayoutEffect(() => { section.current?.closest('.gallery-page')?.scrollTo(0, 0); window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+    const changed = () => {
+      if (nativeFullscreen.current && !document.fullscreenElement) { nativeFullscreen.current = false; setFullscreen(false); fullscreenButton.current?.focus(); }
+    };
+    document.addEventListener('fullscreenchange', changed);
+    return () => {
+      document.removeEventListener('fullscreenchange', changed);
+      if (nativeFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, []);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const previous = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    fullscreenButton.current?.focus();
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !settings && !promotion) { event.preventDefault(); exitFullscreen(); }
+    };
+    document.addEventListener('keydown', escape);
+    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', escape); };
+  }, [fullscreen, settings, promotion]);
+  function exitFullscreen() {
+    setFullscreen(false);
+    if (nativeFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    nativeFullscreen.current = false;
+    fullscreenButton.current?.focus();
+  }
+  function toggleFullscreen() {
+    if (fullscreen) { exitFullscreen(); return; }
+    setFullscreen(true);
+    // Keep dialogs and theme styles inside the browser's fullscreen surface.
+    // Browsers without this API still get the same viewport-filling layout.
+    if (document.fullscreenEnabled && !document.fullscreenElement) {
+      nativeFullscreen.current = true;
+      try {
+        void document.documentElement.requestFullscreen().then(() => {
+          if (!section.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+        }).catch(() => { nativeFullscreen.current = false; });
+      } catch { nativeFullscreen.current = false; }
+    }
+  }
   current.current = state;
   const custom = useCustomPlay(project,state,true);
   const hasZones = !!custom.view.zones?.length;
   const panelAboveBoard = !hasZones && !!custom.view.choices?.length && !custom.view.details?.length;
+  useLayoutEffect(() => {
+    const area = playArea.current;
+    if (!fullscreen || !area) return;
+    let scheduled = 0;
+    const measure = () => {
+      const board = area.querySelector<HTMLElement>('[role="grid"]'), frame = area.querySelector<HTMLElement>('.game-table, .board-frame');
+      if (!board || !frame) return;
+      const boardRect = board.getBoundingClientRect(), frameRect = frame.getBoundingClientRect();
+      if (!boardRect.width || !boardRect.height) return;
+      const height = Array.from(area.children).reduce((total, child) => {
+        const style = getComputedStyle(child);
+        return total + child.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+      }, 0);
+      const extraWidth = frameRect.width - boardRect.width, extraHeight = height - boardRect.height;
+      const minimum = (hasZones ? 240 : 128) + extraWidth;
+      const width = Math.floor(Math.max(Math.min(area.clientWidth, minimum), Math.min(area.clientWidth, (area.clientHeight - extraHeight - 2) * boardRect.width / boardRect.height + extraWidth)));
+      area.style.setProperty('--gallery-table-width', `${width}px`);
+    };
+    const observer = new ResizeObserver(() => { cancelAnimationFrame(scheduled); scheduled = requestAnimationFrame(measure); });
+    observer.observe(area); for (const child of area.children) observer.observe(child);
+    measure();
+    return () => { observer.disconnect(); cancelAnimationFrame(scheduled); area.style.removeProperty('--gallery-table-width'); };
+  }, [fullscreen, hasZones, panelAboveBoard, project]);
   function cancel() { revision.current++; search.current?.abort(); pending.current?.abort(); setThinking(false); }
   useEffect(() => () => { search.current?.abort(); pending.current?.abort(); }, []);
   async function move(move: Move, expected = revision.current, controller = new AbortController()) {
@@ -89,10 +154,10 @@ export function GalleryPlayer({ project, initial, initialBot, onClose }: { proje
     if (selected) submit({ from: selected, to: cell });
   }
   const rulePanel = <CustomRulePanel view={custom.view} error={custom.error} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} onMove={submit} selectedAction={custom.selectedAction} onSelectAction={custom.selectAction}/>;
-  return <section ref={section} className="gallery-player" aria-label="作品试玩">
-    <div className="gallery-player-top"><button className="text-button" onClick={() => { cancel(); onClose(); }}><ArrowLeft size={16}/>返回作品介绍</button><span>独立试玩 · 编辑器草稿已保留</span></div>
+  return <section ref={section} className={`gallery-player ${fullscreen ? 'gallery-fullscreen' : ''}`} aria-label="作品试玩">
+    <div className="gallery-player-top"><button className="text-button" onClick={() => { exitFullscreen(); cancel(); onClose(); }}><ArrowLeft size={16}/>返回作品介绍</button><span>独立试玩 · 编辑器草稿已保留</span><button ref={fullscreenButton} className="button" aria-pressed={fullscreen} onClick={toggleFullscreen} title={fullscreen ? '退出全屏 · Esc' : '全屏试玩'}>{fullscreen ? <Minimize size={16}/> : <Maximize size={16}/>} {fullscreen ? '退出全屏' : '全屏试玩'}</button></div>
     <div className="gallery-player-layout">
-      <div className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
+      <div ref={playArea} className={`gallery-play-board ${hasZones ? 'has-game-zones' : ''}`}>{panelAboveBoard ? rulePanel : null}<div className="gallery-turn" role="status">{state.winner ? state.winner === 'draw' ? '本局和棋' : `${sideLabel(project, state.winner)}获胜` : `${sideLabel(project, state.turn)}回合${thinking ? ' · 电脑思考中' : ''}`}</div>
         <GameTable zones={custom.view.zones} project={project} turn={custom.viewTurn} pending={custom.pending} disabled={!!state.winner || botControlsSide(options,custom.viewTurn)} selectedAction={custom.selectedAction} onSelect={custom.selectAction} onMove={submit}>
         <Board project={project} pieces={state.pieces} pending={custom.pending} markers={custom.view.markers} selected={selected} hints={project.ui.showHints ? project.rules.engine === 'custom' ? custom.hints(selected) : hints(project, state, selected) : []} lastMove={state.history.at(-1)} onCell={click} onDrop={(from, to) => submit({ from, to })} onPick={cell => { playBoardSound('pick'); setSelected(cell); }} canDrag={p => !state.winner && p.side === state.turn && custom.canDrag(p) && !botControlsSide(options, state.turn)} tool="play"/>
         </GameTable>
